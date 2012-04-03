@@ -4,6 +4,11 @@
  */
 $(function(){
 
+    String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
+    String.prototype.ltrim=function(){return this.replace(/^\s+/,'');}
+    String.prototype.rtrim=function(){return this.replace(/\s+$/,'');}
+    String.prototype.fulltrim=function(){return this.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ');}
+
     // Loaded branches
     var branches = [];
 
@@ -40,9 +45,32 @@ $(function(){
     $("header h1").html(username+"/"+repository+"/"+branchname);
     $("header p").html(desc);
 
-    function updatefrontpage(){
+    function update(){
+
+      // Overview
       $("#overview")
 	.html("<h1>Overview</h1>");
+
+      // Files
+      var $ul = $("<ul></ul>");
+      for(var i=0; i<branches[0].files.length; i++)
+	$ul.append("<li>"+branches[0].files[i].name+"</li>");
+      $("#files")
+	.html("<h1>Files</h1>")
+	.append($ul);
+
+      // Classes
+      var $ul = $("<ul></ul>");
+      for(var i=0; i<branches[0].files.length; i++){
+	console.log(branches[0].files[i]);
+	for(var j=0; j<branches[0].files[i].classes.length; j++){
+	  $ul.append("<li>"+branches[0].files[i].classes[j]+"</li>");
+	}
+      }
+      $("#classes")
+	.html("<h1>Classes</h1>")
+	.append($ul);
+      
     }
 
     // Get the file tree
@@ -52,10 +80,10 @@ $(function(){
 	success:function(data){
 	  // Loop through branches
 	  for(branch in data.branches){
-	    var t = new GHDOC.Tree(username,repository, data.branches[branch], branch);
+	    var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
 	    branches.push(t);
 	  }
-	  updatefrontpage();
+	  update();
 	}
       });
   });
@@ -68,14 +96,26 @@ var GHDOC = {};
  * @param string branch
  * @param string filename
  */
-GHDOC.File = function(user,repos,branch,filename){
+GHDOC.File = function(user,repos,branch,filename,success){
+  success = success || function(){};
+  this.name = filename;
+  this.classes = [];
+  this.methods = [];
+  this.functions = [];
+
   // Get file contents
+  var that = this;
   var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename;
   $.ajax({
       url:url,
       dataType:'jsonp',
       success:function(data){
-	console.log(GHDOC.Parse(data.blob.data));
+	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
+	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
+	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
+	that.numclasses = that.classes.length;
+	console.log(filename+",",that.classes.length);
+	success();
       }
     });
 };
@@ -86,43 +126,37 @@ GHDOC.File = function(user,repos,branch,filename){
  * @param string branch
  * @param string name
  */
-GHDOC.Tree = function(user,repos,branch,name){
+GHDOC.Tree = function(user,repos,branch,name,success){
+  success = success || function(){};
   this.filter = "*";
   this.name = name || "Untitled branch";
   this.files = [];
-
   var that = this;
   $.ajax({
       url:"http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+branch,
 	dataType:'jsonp',
 	success:function(data){
-	// Loop through files
-	for(i in data.tree){
-	  if(data.tree[i].type=="blob"){
-	    that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name));
+	  // Loop through files
+	  for(var i in data.tree){
+	    if(data.tree[i].type=="blob"){
+	      that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name,success));
+	    }
+	    // @todo sub branch
 	  }
-	  // @todo sub branch
-	}
-      }
+	  success();
+        }
     });
 };
 
 /**
- * @fn GHDOC.Parse
- * @brief Parse source code.
+ * @fn GHDOC.ParseBlocks
+ * @brief Parse documentation blocks.
  * @param string src
- * @return array An array of parsed objects
  */
-GHDOC.Parse = function(src){
-
-  var result = [];
-
+GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
-  var blocks = src.match(/\/\*\*([.\n\s\t\r\w*@]*)\*\//gm);
-  //console.log(src);
-  console.log("Found "+(blocks ? blocks.length : 0) +" blocks");
+  var blocks = src.match(/\/\*\*([.\n\s\t\r\w*@]*)\*\//gm) || [];
   for(i in blocks){
-
     // trim
     blocks[i] = blocks[i]
       .replace(/^\/\*\*[\n\t\r]*/,"")
@@ -131,7 +165,23 @@ GHDOC.Parse = function(src){
     for(j in lines)
       lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
     blocks[i] = lines.join("\n");
+    
+  } 
+  return blocks;
+};
 
+/**
+ * @fn GHDOC.ParseMethods
+ * @param string src
+ * @return array An array of parsed GHDOC.Method objects
+ */
+GHDOC.ParseMethods = function(src){
+
+  var result = [];
+
+  // Get doc blocks a la doxygen
+  var blocks = GHDOC.ParseBlocks(src);
+  for(i in blocks){
     // Methods have "@memberof" tags to reference their class
     var methods = blocks[i].match(/\@memberof([^@]*)/g);
     for(j in methods){
@@ -143,6 +193,24 @@ GHDOC.Parse = function(src){
       m.parameters = GHDOC.ParseParameters(blocks[i]);
       result.push(m);
     }
+  }
+
+  return result;
+};
+
+/**
+ * @fn GHDOC.ParseClasses
+ * @brief Parse source code.
+ * @param string src
+ * @return array An array of parsed objects
+ */
+GHDOC.ParseClasses = function(src){
+
+  var result = [];
+
+  // Get doc blocks a la doxygen
+  var blocks = GHDOC.ParseBlocks(src);
+  for(i in blocks){
 
     // Classes have "@class" to define their name
     var classes = blocks[i].match(/\@class([^@]*)/g);
@@ -151,8 +219,36 @@ GHDOC.Parse = function(src){
 	.replace(/[\s]*@class[\s]*/,"");
       var s = classes[j];
       var c = new GHDOC.Class();
-      c.name = s;
+      c.name = s.trim();
       c.parameters = GHDOC.ParseParameters(blocks[i]);
+      result.push(c);
+    }
+  }
+  return result;
+};
+
+/**
+ * @fn GHDOC.ParseFunctions
+ * @param string src
+ * @return array An array of parsed objects
+ */
+GHDOC.ParseFunctions = function(src){
+
+  var result = [];
+
+  // Get doc blocks a la doxygen
+  var blocks = GHDOC.ParseBlocks(src);
+  for(i in blocks){
+    // functions have "@fn" to define their name
+    var functions = blocks[i].match(/\@fn([^@]*)/g);
+    for(j in functions){
+      functions[j] = functions[j]
+	.replace(/[\s]*@fn[\s]*/,"");
+      var s = functions[j];
+      var c = new GHDOC.Function();
+      c.name = s.trim();
+      c.parameters = GHDOC.ParseParameters(blocks[i]);
+      c.brief = GHDOC.ParseBrief(blocks[i]);
       result.push(c);
     }
   }
@@ -174,10 +270,28 @@ GHDOC.ParseParameters = function(src){
       .replace(/[\s]*@param[\s]*/,"");
     var s = params[j].split(" ");
     var param = new GHDOC.Parameter();
-    param.type = s[0];
-    param.name = s[1];
+    param.type = s[0].trim();
+    param.name = s[1].trim();
     s.shift(); s.shift();
     param.desc = s.join(" ");
+    result.push(param);
+  }
+  return result;
+};
+
+/**
+ * @fn GHDOC.ParseBrief
+ * @brief Parses brief information from a code block
+ * @param string src
+ * @return string Brief description
+ */
+GHDOC.ParseBrief = function(src){
+  var result = "",
+  briefs = src.match(/@brief([^@]*)/g);
+  for(j in briefs){
+    briefs[j] = briefs[j]
+      .replace(/[\s]*@brief[\s]*/,"");
+    result += briefs[j].trim();
   }
   return result;
 };
@@ -202,6 +316,17 @@ GHDOC.Method = function(){
   this.description = "";
   this.parameters = [];
   this.memberof = "";
+};
+
+/**
+ * A representation of a class method.
+ * @class GHDOC.Method
+ */
+GHDOC.Function = function(){
+  this.name = "(untitled function)";
+  this.brief = "";
+  this.description = "";
+  this.parameters = [];
 };
 
 /**
