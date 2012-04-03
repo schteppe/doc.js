@@ -1,8 +1,8 @@
 # ghdoc
 ## Ideas
 * Use the [GitHub API](http://develop.github.com/) to fetch a repository, parse it, and produce a neat Doxygen-like documentation site.
-* Blocks that are parsed follow the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* Use a ghdoc-specific configuration file that is located in the repository
+* Blocks that are parsed should follow the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
+* A ghdoc-specific configuration file is located in the repository (.ghdoc_ignore?)
 
 ## License
 
