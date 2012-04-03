@@ -15,7 +15,6 @@ $(function(){
     var username =   "schteppe";
     var repository = "ghdoc";
     var branchname = "master";
-    var branchpicked = true;
     var desc = "A documentation generator for GitHub hosted projects";
 
     // Get selected repos
@@ -30,15 +29,8 @@ $(function(){
 	repository = s[1];
 	branchname = s[2];
 	break;
-      case 2:
-	// Username + repos
-	username =   s[0];
-	repository = s[1];
-	branchname = "master";
-	branchpicked = false;
-	break;
       default:
-	alert("Please give hash on the permitted form, eg user/repos or user/repos/branch");
+	alert("Please give url hash on the permitted form, eg user/repos or user/repos/branch");
 	break;
       }
       desc = "";
@@ -50,21 +42,7 @@ $(function(){
 
     function updatefrontpage(){
       $("#overview")
-	.html("<h1>Overview</h1>")
-	.append("<h2>Branches</h2>");
-      if(!branchpicked){
-	// Branch not picked. List available branches.
-	for(var i=0; i<branches.length; i++){
-	  $("#overview")
-	    .append("<p><a href=\""+window.location+"/"+branches[i].name+"\">"+branches[i].name+"</a></p>");
-	}
-	$("#overview a").click(function(){
-	    branchpicked = true;
-	    updatefrontpage();
-	  });
-      } else {
-	$("h2").html("Branch: "+branchname);
-      }
+	.html("<h1>Overview</h1>");
     }
 
     // Get the file tree
@@ -99,6 +77,7 @@ GHDOC.File = function(user,repos,branch,filename){
  *
  */
 GHDOC.Tree = function(user,repos,branch,name){
+  this.filter = "*";
   this.name = name || "Untitled branch";
   this.files = [];
 
@@ -112,6 +91,7 @@ GHDOC.Tree = function(user,repos,branch,name){
 	  if(data.tree[i].type=="blob"){
 	    that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name));
 	  }
+	  // @todo sub branch
 	}
       }
     });
