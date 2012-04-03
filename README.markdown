@@ -4,7 +4,7 @@
 * Blocks that are parsed should follow the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
 * A ghdoc-specific configuration file is located in the repository (.ghdoc_ignore?)
 
-## License
+## License (the MIT license)
 
 Copyright (c) 2012 ghdoc contributors
 
