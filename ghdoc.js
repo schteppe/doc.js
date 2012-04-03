@@ -62,15 +62,13 @@ $(function(){
       // Classes
       var $ul = $("<ul></ul>");
       for(var i=0; i<branches[0].files.length; i++){
-	console.log(branches[0].files[i]);
 	for(var j=0; j<branches[0].files[i].classes.length; j++){
-	  $ul.append("<li>"+branches[0].files[i].classes[j]+"</li>");
+	  $ul.append("<li>"+branches[0].files[i].classes[j].name+"</li>");
 	}
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append($ul);
-      
+	.append($ul);      
     }
 
     // Get the file tree
@@ -80,8 +78,10 @@ $(function(){
 	success:function(data){
 	  // Loop through branches
 	  for(branch in data.branches){
-	    var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
-	    branches.push(t);
+	    if(branch==branchname){
+	      var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
+	      branches.push(t);
+	    }
 	  }
 	  update();
 	}
@@ -112,15 +112,14 @@ GHDOC.File = function(user,repos,branch,filename,success){
       success:function(data){
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
-	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
-	that.numclasses = that.classes.length;
-	console.log(filename+",",that.classes.length);
+	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));	
 	success();
       }
     });
 };
 
 /**
+ * @class GHDOC.Tree
  * @param string user
  * @param string repos
  * @param string branch
@@ -319,8 +318,8 @@ GHDOC.Method = function(){
 };
 
 /**
- * A representation of a class method.
- * @class GHDOC.Method
+ * A representation of a function
+ * @class GHDOC.Function
  */
 GHDOC.Function = function(){
   this.name = "(untitled function)";
