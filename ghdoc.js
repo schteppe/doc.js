@@ -98,18 +98,14 @@ $(function(){
     }
 
     // Get the file tree
-    console.log("loading tree...");
     $.ajax({
 	url:"http://github.com/api/v2/json/repos/show/"+username+"/"+repository+"/branches",
 	dataType:'jsonp',
 	success:function(data){
-	  console.log(data);
 	  // Loop through branches
 	  for(branch in data.branches){
-	    console.log(branch, branchname);
 	    if(branch==branchname){
 	      var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
-	      console.log(t);
 	      branches.push(t);
 	    }
 	  }
