@@ -56,7 +56,7 @@ Currently only slash-star comment blocks are supported. Works great in e.g. Java
 ## How it works
 * Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
 * Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* GHDoc is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, GHDoc is happy. Because of this, comment blocks needs to be precise and contain more information than language-aware documentation softwares.
+* GHDoc is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, GHDoc is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
 
 ## License (the MIT license)
 
