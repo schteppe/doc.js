@@ -31,10 +31,25 @@ Currently only slash-star comment blocks are supported. Works great in e.g. Java
 
 ```
 /**
+ * @public
+ * @static
+ * @fn myMethod
  * @memberof myClass
  * @brief This is a method in myClass.
  * @param int myConstructorParameter1
  * @param int myConstructorParameter2
+ * @return float
+ */
+```
+
+### Property
+
+```
+/**
+ * @private
+ * @property int myProperty
+ * @memberof myClass
+ * @brief This is a method in myClass.
  */
 ```
 
