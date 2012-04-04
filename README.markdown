@@ -1,8 +1,10 @@
-# ghdoc
-## Ideas
-* Use the [GitHub API](http://develop.github.com/) to fetch a repository, parse it, and produce a neat Doxygen-like documentation site.
-* Blocks that are parsed should follow the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* A ghdoc-specific configuration file is located in the repository (.ghdoc_ignore?)
+# ghdoc usage
+1. Create a ```.ghdoc``` file in your repos containing the files you want to match, example content: ```myFile\.js```
+2. Surf to ```schteppe.github.com/ghdoc#user/repos/branch```
+
+* Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
+* Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
+* A ghdoc-specific configuration file is located in the repository
 
 ## License (the MIT license)
 
