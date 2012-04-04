@@ -1,8 +1,46 @@
-# ghdoc
-## Ideas
-* Use the [GitHub API](http://develop.github.com/) to fetch a repository, parse it, and produce a neat Doxygen-like documentation site.
-* Blocks that are parsed should follow the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* A ghdoc-specific configuration file is located in the repository (.ghdoc_ignore?)
+# GHDoc usage
+1. Document your code using GHDoc comment blocks
+2. Create a ```.ghdoc``` file in your repos containing regexps to match the files you want to include, example content: ```myFile\.js```
+3. Surf to ```schteppe.github.com/ghdoc#user/repos/branch``` and see your doc
+
+## GHDoc comment blocks
+Currently only slash-star comment blocks are supported. Works great in e.g. JavaScript.
+
+### Function
+
+```
+/**
+ * @fn myFunc
+ * @brief This is a description of myFunc()
+ * @param string myParam This is a description of myParam
+ * @return int Description of return value
+ */
+```
+
+### Class
+
+```
+/**
+ * @class myClass
+ * @brief This is a description of the class myClass
+ * @param int myConstructorParameter
+ */
+```
+
+### Method
+
+```
+/**
+ * @memberof myClass
+ * @brief This is a method in myClass.
+ * @param int myConstructorParameter1
+ * @param int myConstructorParameter2
+ */
+```
+
+## How it works
+* Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
+* Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
 
 ## License (the MIT license)
 
