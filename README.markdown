@@ -49,7 +49,7 @@ Currently only slash-star comment blocks are supported. Works great in e.g. Java
  * @private
  * @property int myProperty
  * @memberof myClass
- * @brief This is a method in myClass.
+ * @brief This is a property in myClass.
  */
 ```
 
