@@ -99,16 +99,17 @@ var GHDOC = {};
 GHDOC.File = function(user,repos,branch,filename,options){
   // Extend options
   options = options || {};
-  var def = {
+  var opt = {
     success:function(){},
     async:true
   };
-  $.extend(options,def);
+  $.extend(opt,options);
 
   this.name = filename;
   this.classes = [];
   this.methods = [];
   this.functions = [];
+  this.content = null;
 
   // Get file contents
   var that = this;
@@ -116,12 +117,12 @@ GHDOC.File = function(user,repos,branch,filename,options){
   $.ajax({
       url:url,
       dataType:'jsonp',
-      async:options.async,
       success:function(data){
+	that.content = data.blob.data;
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
 	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));	
-	options.success();
+	opt.success();
       }
     });
 };
@@ -151,21 +152,34 @@ GHDOC.Tree = function(user,repos,branch,name,success){
       url:"http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+branch,
       dataType:'jsonp',
       success:function(data){
+
 	// Find .ghdoc file
+	var useghdocfile = false;
 	for(var i in data.tree){
-	  if(data.tree[i].type=="blob" && data.tree[i].name.match(/ghdoc/)){
-	    that.ghdocfile = new GHDOC.File(user,repos,branch,data.tree[i].name,{success:success,async:false});
+	  if(data.tree[i].type=="blob" && data.tree[i].name.match(/^\.ghdoc$/)){
+	    useghdocfile = true;
+	    that.ghdocfile = new GHDOC.File(user,repos,branch,data.tree[i].name,{success:function(){
+		  // Save found patterns
+		  if(that.ghdocfile.content){
+		    var lines = that.ghdocfile.content.split("\n");
+		    for(var j in lines){
+		      if(lines[j][0]!='#')
+			that.patterns.push(lines[j]);
+		    }
+		  }
+
+		  // Loop through files
+		  for(var i in data.tree){
+		    if(data.tree[i].type=="blob" && matches(data.tree[i].name)){
+		      that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name,{success:success}));
+		    }
+		    // @todo sub branch
+		  }
+		  success();
+		}
+	      });
 	  }
-	}	
-	
-	// Loop through files
-	for(var i in data.tree){
-	  if(data.tree[i].type=="blob" && matches(data.tree[i].name)){
-	    that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name,{success:success}));
-	  }
-	  // @todo sub branch
 	}
-	success();
       }
     });
 };
