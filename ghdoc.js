@@ -81,9 +81,20 @@ $(function(){
 	.append($ul);
 
       // Functions
+      var $ul = $("<ul></ul>");
+      for(var i=0; i<branches[0].files.length; i++){
+	var file = branches[0].files[i];
+	for(var j=0; j<file.functions.length; j++){
+	  var args = [];
+	  for(var k in file.functions[j].parameters)
+	    args.push("<i>"+file.functions[j].parameters[k].type+"</i>" + " " + file.functions[j].parameters[k].name);
+	  $class = $("<li>"+file.functions[j].name+" ( "+args.join(" , ")+" ) </li>");
+	  $ul.append($class);
+	}
+      }
       $("#functions")
 	.html("<h1>Functions</h1>")
-	.append("<p>@todo</p>");
+	.append($ul);
     }
 
     // Get the file tree
@@ -106,6 +117,7 @@ $(function(){
 var GHDOC = {};
 
 /**
+ * @class GHDOC.File
  * @param string user
  * @param string repos
  * @param string branch
