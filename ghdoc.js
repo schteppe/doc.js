@@ -78,7 +78,57 @@ $(function(){
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
+	.append("<div id=\"chart\"></div>")
 	.append($ul);
+
+      // d3.js
+      var w = 900,h = 170;
+      var cluster = d3.layout.cluster()
+	.size([h, w - 160]);
+      var diagonal = d3.svg.diagonal()
+	.projection(function(d) { return [d.y, d.x]; });
+      var vis = d3.select("#chart").append("svg")
+	.attr("width", w)
+	.attr("height", h)
+	.append("g")
+	.attr("transform", "translate(70, 0)");
+      var data = {
+	"name": "BaseClass",
+	"children": [
+      {
+        "name": "SubClass",
+        "children": [
+      {
+	"name": "SubSubClass",
+	"children": [
+      {"name": "SubSubSubClass1", "size": 3938},
+      {"name": "SubSubSubClass2", "size": 3812},
+      {"name": "SubSubSubClass2", "size": 6714},
+      {"name": "SubSubSubClass3", "size": 743}
+		     ]
+      }
+		     ]
+      }
+		     ]
+      };
+      var nodes = cluster.nodes(data);
+      var link = vis.selectAll("path.link")
+	.data(cluster.links(nodes))
+	.enter().append("path")
+	.attr("class", "link")
+	.attr("d", diagonal);
+      var node = vis.selectAll("g.node")
+	.data(nodes)
+	.enter().append("g")
+	.attr("class", "node")
+	.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+	node.append("circle")
+	.attr("r", 4.5);
+      node.append("text")
+	.attr("dx", function(d) { return d.children ? -8 : 8; })
+	.attr("dy", 3)
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+	.text(function(d) { return d.name; });
 
       // Functions
       var $ul = $("<ul></ul>");
