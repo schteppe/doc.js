@@ -106,6 +106,7 @@ $(function(){
 	  for(branch in data.branches){
 	    if(branch==branchname){
 	      var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
+	      console.log(t);
 	      branches.push(t);
 	    }
 	  }
