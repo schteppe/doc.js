@@ -49,7 +49,8 @@ $(function(){
 
       // Overview
       $("#overview")
-	.html("<h1>Overview</h1>");
+	.html("<h1>Overview</h1>")
+	.append("<p>@todo</p>");
 
       // Files
       var $ul = $("<ul></ul>");
@@ -62,13 +63,27 @@ $(function(){
       // Classes
       var $ul = $("<ul></ul>");
       for(var i=0; i<branches[0].files.length; i++){
-	for(var j=0; j<branches[0].files[i].classes.length; j++){
-	  $ul.append("<li>"+branches[0].files[i].classes[j].name+"</li>");
+	var file = branches[0].files[i];
+	for(var j=0; j<file.classes.length; j++){
+	  var args = [];
+	  for(var k in file.classes[j].parameters)
+	    args.push("<i>"+file.classes[j].parameters[k].type+"</i>" + " " + file.classes[j].parameters[k].name);
+	  $class = $("<li>"+file.classes[j].name+" ( "+args.join(" , ")+" ) </li>");
+	  $sub = $("<ul></ul>");
+	  for(var k in file.classes[j].methods.length)
+	    $sub.append("<li>"+file.classes[j].methods[k].name+"</li>");
+	  $class.append($sub);
+	  $ul.append($class);
 	}
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append($ul);      
+	.append($ul);
+
+      // Functions
+      $("#functions")
+	.html("<h1>Functions</h1>")
+	.append("<p>@todo</p>");
     }
 
     // Get the file tree
@@ -144,7 +159,7 @@ GHDOC.Tree = function(user,repos,branch,name,success){
 
   function matches(filename){
     for(var i in that.patterns)
-      if(filename.match(that.patterns[i])) return true;
+      if(that.patterns[i].length && filename.match(that.patterns[i])) return true;
     return false;
   }
 
@@ -340,6 +355,7 @@ GHDOC.Class = function(){
   this.parent = null;
   this.methods = [];
   this.properties = [];
+  this.parameters = []; // for constructor
 };
 
 /**
