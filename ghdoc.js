@@ -278,7 +278,6 @@ GHDOC.ParseBlocks = function(src){
     for(j in lines)
       lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
     blocks[i] = lines.join("\n");
-    
   } 
   return blocks;
 };
@@ -289,25 +288,21 @@ GHDOC.ParseBlocks = function(src){
  * @return array An array of parsed GHDOC.Method objects
  */
 GHDOC.ParseMethods = function(src){
-
   var result = [];
-
   // Get doc blocks a la doxygen
   var blocks = GHDOC.ParseBlocks(src);
   for(i in blocks){
-    // Methods have "@memberof" tags to reference their class
-    var methods = blocks[i].match(/\@memberof([^@]*)/g);
-    for(j in methods){
-      methods[j] = methods[j]
-	.replace(/[\s]*@memberof[\s]*/,"");
-      var s = methods[j];
+    // Methods have "@memberof" tags to reference their class AND a "@fn" tag for their name
+    var fns = blocks[i].match(/\@fn([^@]*)/g);
+    var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
+    if(memberofs && memberofs.length>=1 && fns && fns.length>=1){
       var m = new GHDOC.Method();
-      m.memberof = s;
+      m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"");
+      m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
       result.push(m);
     }
   }
-
   return result;
 };
 
