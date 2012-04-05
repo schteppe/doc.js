@@ -74,9 +74,7 @@ $(function(){
       var mainpage, pages=[];
       for(var i=0; i<branches[0].files.length; i++){
 	var f = branches[0].files[i];
-	console.log(f.pages);
 	for(var j in f.pages){
-	  
 	  if(f.pages[j] instanceof GHDOC.MainPage)
 	    mainpage = f.pages[j];
 	  else
@@ -84,10 +82,15 @@ $(function(){
 	}
       }
 
-      // Overview
-      $("#overview")
-	.html("<h1>Overview</h1>")
-	.append("<p>@todo</p>");
+      // Main page
+      if(!mainpage)
+	$("#overview")
+	  .html("<h1>Main page</h1>")
+	  .append("<p>This page is not written yet. Nothing to see here!</p>");
+      else
+	$("#overview")
+	  .html("<h1>"+mainpage.name+"</h1>")
+	  .append(mainpage.toHTML());
 
       // Files
       var $ul = $("<ul></ul>");
@@ -341,11 +344,12 @@ GHDOC.Tree = function(user,repos,branch,name,success){
  */
 GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
-  var blocks = src.match(/\/\*\*([.\n\s\t\r\w*@]*)\*\//gm) || [];
+  // (.(?!\*\/))* is negative lookahead, anything not followed by */
+  var blocks = src.match(/^[\s\t]*\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];//match(/\/\*\*([.\n\s\t\r\w*\@:\.\?\!\-_\d#]*)\*\//gm) || [];
   for(i in blocks){
     // trim
     blocks[i] = blocks[i]
-      .replace(/^\/\*\*[\n\t\r]*/,"")
+      .replace(/\/\*\*[\n\t\r]*/,"")
       .replace(/[\n\t\r]*\*\/$/,"");
     var lines = blocks[i].split("\n");
     for(j in lines)
@@ -392,8 +396,7 @@ GHDOC.ParsePages = function(src){
   var blocks = GHDOC.ParseBlocks(src);
   for(i in blocks){
     // Pages got the @page command
-    var pages = blocks[i].match(/\@mainpage([^@]*)/g);
-    console.log(pages);
+    var pages = blocks[i].match(/\@(page|mainpage)([^@]*)/g);
     if(pages && pages.length>=1){
       var p = pages[0].match("main") ? new GHDOC.MainPage() : new GHDOC.Page();
       p.name = pages[0].replace(/[\s]*@(page|mainpage)[\s]*/,"").trim();
@@ -586,8 +589,10 @@ GHDOC.Page = function(){
   this.content = "";
 };
 GHDOC.Page.prototype.toHTML = function(){
-  return ("<h1>"+this.name+"</h1>"+
-	  this.content.replace(/\@section\s*([\w+])/g,function(m,$1){return "<h2>"+$1+"</h2>";}));
+  return (this.content
+	  .replace(/\@section\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h2 id=\""+$1+"\">"+$2+"</h2>";})
+	  .replace(/\@subsection\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h3 id=\""+$1+"\">"+$2+"</h3>";})
+	  );
 };
 
 /**
