@@ -1,7 +1,30 @@
 /**
- * Doxygen documentation generator for Github repositories
- * @see http://www.stack.nl/~dimitri/doxygen/commands.html
+ * @file ghdoc.js
+ * @brief Main JavaScript file
  */
+
+/**
+ * @mainpage GHDoc
+ *
+ * @section intro_sec What is GHDoc?
+ * GHDoc is a web based on-the-fly documentation generator for GitHub hosted code.
+ * 
+ * @section install_sec Usage
+ * 
+ * @subsection step1 Step 1: Document your code
+ * Using GHDoc comment blocks.
+ * 
+ * @subsection step1 Step 2: Create .ghdoc file
+ * Create a file in your repository containing regexps to match the files you want to include. Example content: myFile\.js
+ *
+ * @subsection step1 Step 3: Done
+ * Surf to schteppe.github.com/ghdoc#user/repos/branch and see your doc.
+ *
+ * @section contrib_sec Contribute
+ * If you like this software, help making it better. Fork the code on https://github.com/schteppe/ghdoc
+ *
+ */
+
 $(function(){
 
     String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
@@ -54,8 +77,10 @@ $(function(){
 
       // Files
       var $ul = $("<ul></ul>");
-      for(var i=0; i<branches[0].files.length; i++)
-	$ul.append("<li>"+branches[0].files[i].name+"</li>");
+      for(var i=0; i<branches[0].files.length; i++){
+	var f = branches[0].files[i];
+	$ul.append("<li><a href=\"https://github.com/"+username+"/"+repository+"/blob/"+branchname+"/"+f.name+"\">"+f.name+"</a> "+f.brief+"</li>");
+      }
       $("#files")
 	.html("<h1>Files</h1>")
 	.append($ul);
@@ -68,8 +93,8 @@ $(function(){
 	for(var j=0; j<file.classes.length; j++){
 	  var args = [], c = file.classes[j];
 	  for(var k in c.parameters)
-	    args.push("<i>"+c.parameters[k].type+"</i>" + " " + c.parameters[k].name);
-	  var sign = c.name+" ( "+args.join(" , ")+" )";
+	    args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	  var sign = c.name;
 	  $details.append("<h3>"+c.name+"</h3>")
 	    .append("<p>"+c.brief+"</p>");
 	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
@@ -144,18 +169,18 @@ $(function(){
 	  // Construct signature
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    args.push("<i>"+p.type+"</i>" + " " + p.name);
+	    args.push(p.type+ " " + p.name);
 	  }
-	  $details.append("<h3 id=\""+f.name+"\"><i>"+(f.returnvalue ? f.returnvalue.type : "void") + "</i> " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	  $details.append("<h3 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h3>")
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    $details.append("<h4><i>"+p.type+ "</i> " + p.name+"</h4><p>"+p.brief+"</p>");
+	    $details.append("<h4><span class=\"datatype\">"+p.type+ "</span> " + p.name+"</h4><p>"+p.brief+"</p>");
 	  }
 
-	  $class = $("<li><label for=\""+f.name+"\">"+(f.returnvalue ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+" ( "+args.join(" , ")+" )</a></li>");
+	  $class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
 	  $ul.append($class);
 	}
       }
@@ -193,6 +218,7 @@ var GHDOC = {};
  * @param string repos
  * @param string branch
  * @param string filename
+ * @param array options
  */
 GHDOC.File = function(user,repos,branch,filename,options){
   // Extend options
@@ -218,6 +244,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
   this.functions = [];
   this.content = null;
   this.returntype = "";
+  this.brief = "";
 
   // Get file contents
   var that = this;
@@ -455,7 +482,6 @@ GHDOC.ParseReturn = function(src){
   if(returns && returns.length){
     var result = new GHDOC.ReturnValue();
     var r = returns[j].replace(/[\s]*@return[\s]*/,"").trim();
-    console.log(r,result);
     result.type = r.substr(0,r.indexOf(" "));
     result.name = r.substr(r.indexOf(" "));
     result.name = result.name.substr(0,result.name.indexOf(" "));
