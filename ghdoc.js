@@ -132,19 +132,37 @@ $(function(){
 
       // Functions
       var $ul = $("<ul></ul>");
+      var $details = $("<div></div>");
       for(var i=0; i<branches[0].files.length; i++){
 	var file = branches[0].files[i];
 	for(var j=0; j<file.functions.length; j++){
 	  var args = [];
-	  for(var k in file.functions[j].parameters)
-	    args.push("<i>"+file.functions[j].parameters[k].type+"</i>" + " " + file.functions[j].parameters[k].name);
-	  $class = $("<li>"+file.functions[j].name+" ( "+args.join(" , ")+" ) </li>");
+	  var f = file.functions[j];
+
+	  // Construct signature
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    args.push("<i>"+p.type+"</i>" + " " + p.name);
+	  }
+	  $details.append("<h3>"+f.returntype + " " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	    .append("<p>"+f.brief+"</p>");
+
+	  // Parameter details
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    $details.append("<h4><i>"+p.type+ "</i> " + p.name+"</h4><p>"+p.brief+"</p>");
+	  }
+
+	  $class = $("<li>"+f.name+" ( "+args.join(" , ")+" ) </li>");
 	  $ul.append($class);
 	}
       }
       $("#functions")
 	.html("<h1>Functions</h1>")
-	.append($ul);
+	.append("<h2>Overview</h2>")
+	.append($ul)
+	.append("<h2>Details</h2>")
+	.append($details);
     }
 
     // Get the file tree
@@ -182,11 +200,21 @@ GHDOC.File = function(user,repos,branch,filename,options){
   };
   $.extend(opt,options);
 
+  /**
+   * @property name
+   * @memberof GHDOC.File
+   */
   this.name = filename;
+
+  /**
+   * @property classes
+   * @memberof GHDOC.File
+   */
   this.classes = [];
   this.methods = [];
   this.functions = [];
   this.content = null;
+  this.returntype = "";
 
   // Get file contents
   var that = this;
@@ -264,7 +292,7 @@ GHDOC.Tree = function(user,repos,branch,name,success){
 /**
  * @fn GHDOC.ParseBlocks
  * @brief Parse documentation blocks.
- * @param string src
+ * @param string src Source code to parse.
  */
 GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
@@ -367,7 +395,7 @@ GHDOC.ParseFunctions = function(src){
 /**
  * @fn GHDOC.ParseParameters
  * @brief Parses parameter data from a string.
- * @param string src
+ * @param string src Source code to parse from.
  * @return array An array of GHDOC.Parameter objects
  */
 GHDOC.ParseParameters = function(src){
@@ -381,7 +409,8 @@ GHDOC.ParseParameters = function(src){
     param.type = s[0].trim();
     param.name = s[1].trim();
     s.shift(); s.shift();
-    param.desc = s.join(" ");
+    console.log(s);
+    param.brief = s;
     result.push(param);
   }
   return result;
@@ -436,6 +465,7 @@ GHDOC.Function = function(){
   this.brief = "";
   this.description = "";
   this.parameters = [];
+  this.returntype = "";
 };
 
 /**
@@ -445,13 +475,15 @@ GHDOC.Function = function(){
 GHDOC.Property = function(){
   this.type = "";
   this.name = "";
+  this.brief = "";
 };
 
 /**
- * A representation of a class property.
+ * A representation of a parameter.
  * @class GHDOC.Parameter
  */
 GHDOC.Parameter = function(){
   this.type = "";
   this.name = "";
+  this.brief = "";
 };
