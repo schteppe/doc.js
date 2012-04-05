@@ -7,7 +7,7 @@
  * @mainpage GHDoc
  *
  * @section intro_sec What is GHDoc?
- * GHDoc is a web based on-the-fly documentation generator for GitHub hosted code.
+ * GHDoc is a web based on-the-fly documentation viewer for GitHub hosted code.
  * 
  * @section install_sec Usage
  * 
@@ -43,7 +43,7 @@ $(function(){
     var username =   "schteppe";
     var repository = "ghdoc";
     var branchname = "master";
-    var desc = "A documentation generator for GitHub hosted projects";
+    var desc = "A documentation viewer for code hosted on GitHub";
 
     // Get selected repos
     if(window.location && 
@@ -204,16 +204,16 @@ $(function(){
 	  var p = f.parameters[k];
 	  args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
 	}
-	$details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
+	$details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
 	  .append("<p>"+f.brief+"</p>");
 
 	// Parameter details
 	for(var k in f.parameters){
 	  var p = f.parameters[k];
-	  $details.append("<h4><span class=\"datatype\">"+p.type+ "</span> " + p.name+"</h4><p>"+p.brief+"</p>");
+	  $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
 	}
 
-	$class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
+	$class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
 	$ul.append($class);
       }
       $("#functions")
