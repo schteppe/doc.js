@@ -61,40 +61,110 @@ $(function(){
 	.append($ul);
 
       // Classes
-      var $ul = $("<ul></ul>");
+      var $ul = $("<ul class=\"class_overview\"></ul>");
+      var $details = $("<div></div>");
       for(var i=0; i<branches[0].files.length; i++){
 	var file = branches[0].files[i];
 	for(var j=0; j<file.classes.length; j++){
-	  var args = [];
-	  for(var k in file.classes[j].parameters)
-	    args.push("<i>"+file.classes[j].parameters[k].type+"</i>" + " " + file.classes[j].parameters[k].name);
-	  $class = $("<li>"+file.classes[j].name+" ( "+args.join(" , ")+" ) </li>");
-	  $sub = $("<ul></ul>");
-	  for(var k in file.classes[j].methods.length)
-	    $sub.append("<li>"+file.classes[j].methods[k].name+"</li>");
-	  $class.append($sub);
+	  var args = [], c = file.classes[j];
+	  for(var k in c.parameters)
+	    args.push("<i>"+c.parameters[k].type+"</i>" + " " + c.parameters[k].name);
+	  var sign = c.name+" ( "+args.join(" , ")+" )";
+	  $details.append("<h3>"+c.name+"</h3>")
+	    .append("<p>"+c.brief+"</p>");
+	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	  $ul.append($class);
 	}
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append($ul);
+	.append("<h2>Overview</h2><div id=\"chart\"></div>")
+	.append($ul)
+	.append("<h2>Details</h2>")
+	.append($details);
+
+      // d3.js
+      var w = 900,h = 170;
+      var cluster = d3.layout.cluster()
+	.size([h, w - 160]);
+      var diagonal = d3.svg.diagonal()
+	.projection(function(d) { return [d.y, d.x]; });
+      var vis = d3.select("#chart").append("svg")
+	.attr("width", w)
+	.attr("height", h)
+	.append("g")
+	.attr("transform", "translate(70, 0)");
+      var data = {
+	"name": "BaseClass",
+	"children": [
+      {
+        "name": "SubClass",
+        "children": [
+      {
+	"name": "SubSubClass",
+	"children": [
+      {"name": "SubSubSubClass1", "size": 3938},
+      {"name": "SubSubSubClass2", "size": 3812},
+      {"name": "SubSubSubClass2", "size": 6714},
+      {"name": "SubSubSubClass3", "size": 743}
+		     ]
+      }
+		     ]
+      }
+		     ]
+      };
+      var nodes = cluster.nodes(data);
+      var link = vis.selectAll("path.link")
+	.data(cluster.links(nodes))
+	.enter().append("path")
+	.attr("class", "link")
+	.attr("d", diagonal);
+      var node = vis.selectAll("g.node")
+	.data(nodes)
+	.enter().append("g")
+	.attr("class", "node")
+	.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+	node.append("circle")
+	.attr("r", 4.5);
+      node.append("text")
+	.attr("dx", function(d) { return d.children ? -8 : 8; })
+	.attr("dy", 3)
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+	.text(function(d) { return d.name; });
 
       // Functions
-      var $ul = $("<ul></ul>");
+      var $ul = $("<ul class=\"function_overview\"></ul>");
+      var $details = $("<div></div>");
       for(var i=0; i<branches[0].files.length; i++){
 	var file = branches[0].files[i];
 	for(var j=0; j<file.functions.length; j++){
 	  var args = [];
-	  for(var k in file.functions[j].parameters)
-	    args.push("<i>"+file.functions[j].parameters[k].type+"</i>" + " " + file.functions[j].parameters[k].name);
-	  $class = $("<li>"+file.functions[j].name+" ( "+args.join(" , ")+" ) </li>");
+	  var f = file.functions[j];
+
+	  // Construct signature
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    args.push("<i>"+p.type+"</i>" + " " + p.name);
+	  }
+	  $details.append("<h3 id=\""+f.name+"\"><i>"+(f.returnvalue ? f.returnvalue.type : "void") + "</i> " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	    .append("<p>"+f.brief+"</p>");
+
+	  // Parameter details
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    $details.append("<h4><i>"+p.type+ "</i> " + p.name+"</h4><p>"+p.brief+"</p>");
+	  }
+
+	  $class = $("<li><label for=\""+f.name+"\">"+(f.returnvalue ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+" ( "+args.join(" , ")+" )</a></li>");
 	  $ul.append($class);
 	}
       }
       $("#functions")
 	.html("<h1>Functions</h1>")
-	.append($ul);
+	.append("<h2>Overview</h2>")
+	.append($ul)
+	.append("<h2>Details</h2>")
+	.append($details);
     }
 
     // Get the file tree
@@ -118,6 +188,7 @@ var GHDOC = {};
 
 /**
  * @class GHDOC.File
+ * @author schteppe
  * @param string user
  * @param string repos
  * @param string branch
@@ -132,11 +203,21 @@ GHDOC.File = function(user,repos,branch,filename,options){
   };
   $.extend(opt,options);
 
+  /**
+   * @property name
+   * @memberof GHDOC.File
+   */
   this.name = filename;
+
+  /**
+   * @property classes
+   * @memberof GHDOC.File
+   */
   this.classes = [];
   this.methods = [];
   this.functions = [];
   this.content = null;
+  this.returntype = "";
 
   // Get file contents
   var that = this;
@@ -148,7 +229,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 	that.content = data.blob.data;
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
-	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));	
+	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
 	opt.success();
       }
     });
@@ -156,6 +237,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
 /**
  * @class GHDOC.Tree
+ * @author schteppe
  * @param string user
  * @param string repos
  * @param string branch
@@ -213,8 +295,9 @@ GHDOC.Tree = function(user,repos,branch,name,success){
 
 /**
  * @fn GHDOC.ParseBlocks
+ * @author schteppe
  * @brief Parse documentation blocks.
- * @param string src
+ * @param string src Source code to parse.
  */
 GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
@@ -228,41 +311,38 @@ GHDOC.ParseBlocks = function(src){
     for(j in lines)
       lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
     blocks[i] = lines.join("\n");
-    
   } 
   return blocks;
 };
 
 /**
  * @fn GHDOC.ParseMethods
+ * @author schteppe
  * @param string src
  * @return array An array of parsed GHDOC.Method objects
  */
 GHDOC.ParseMethods = function(src){
-
   var result = [];
-
   // Get doc blocks a la doxygen
   var blocks = GHDOC.ParseBlocks(src);
   for(i in blocks){
-    // Methods have "@memberof" tags to reference their class
-    var methods = blocks[i].match(/\@memberof([^@]*)/g);
-    for(j in methods){
-      methods[j] = methods[j]
-	.replace(/[\s]*@memberof[\s]*/,"");
-      var s = methods[j];
+    // Methods have "@memberof" tags to reference their class AND a "@fn" tag for their name
+    var fns = blocks[i].match(/\@fn([^@]*)/g);
+    var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
+    if(memberofs && memberofs.length>=1 && fns && fns.length>=1){
       var m = new GHDOC.Method();
-      m.memberof = s;
+      m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"");
+      m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
       result.push(m);
     }
   }
-
   return result;
 };
 
 /**
  * @fn GHDOC.ParseClasses
+ * @author schteppe
  * @brief Parse source code.
  * @param string src
  * @return array An array of parsed objects
@@ -284,6 +364,7 @@ GHDOC.ParseClasses = function(src){
       var c = new GHDOC.Class();
       c.name = s.trim();
       c.parameters = GHDOC.ParseParameters(blocks[i]);
+      c.brief = GHDOC.ParseBrief(blocks[i]);
       result.push(c);
     }
   }
@@ -292,6 +373,7 @@ GHDOC.ParseClasses = function(src){
 
 /**
  * @fn GHDOC.ParseFunctions
+ * @author schteppe
  * @param string src
  * @return array An array of parsed objects
  */
@@ -312,6 +394,7 @@ GHDOC.ParseFunctions = function(src){
       c.name = s.trim();
       c.parameters = GHDOC.ParseParameters(blocks[i]);
       c.brief = GHDOC.ParseBrief(blocks[i]);
+      c.returnvalue = GHDOC.ParseReturn(blocks[i]);
       result.push(c);
     }
   }
@@ -321,8 +404,9 @@ GHDOC.ParseFunctions = function(src){
 
 /**
  * @fn GHDOC.ParseParameters
+ * @author schteppe
  * @brief Parses parameter data from a string.
- * @param string src
+ * @param string src Source code to parse from.
  * @return array An array of GHDOC.Parameter objects
  */
 GHDOC.ParseParameters = function(src){
@@ -331,12 +415,11 @@ GHDOC.ParseParameters = function(src){
   for(j in params){
     params[j] = params[j]
       .replace(/[\s]*@param[\s]*/,"");
-    var s = params[j].split(" ");
+    var s = params[j].split(" ",2);
     var param = new GHDOC.Parameter();
     param.type = s[0].trim();
     param.name = s[1].trim();
-    s.shift(); s.shift();
-    param.desc = s.join(" ");
+    param.brief = params[j].replace(s[0],"").replace(s[1],"").trim();
     result.push(param);
   }
   return result;
@@ -344,6 +427,7 @@ GHDOC.ParseParameters = function(src){
 
 /**
  * @fn GHDOC.ParseBrief
+ * @author schteppe
  * @brief Parses brief information from a code block
  * @param string src
  * @return string Brief description
@@ -360,7 +444,29 @@ GHDOC.ParseBrief = function(src){
 };
 
 /**
+ * @fn GHDOC.ParseReturn
+ * @author schteppe
+ * @brief Parses the information about the return value
+ * @param string src
+ * @return GHDOC.ReturnValue
+ */
+GHDOC.ParseReturn = function(src){
+  var returns = src.match(/@return([^@]*)/);
+  if(returns && returns.length){
+    var result = new GHDOC.ReturnValue();
+    var r = returns[j].replace(/[\s]*@return[\s]*/,"").trim();
+    console.log(r,result);
+    result.type = r.substr(0,r.indexOf(" "));
+    result.name = r.substr(r.indexOf(" "));
+    result.name = result.name.substr(0,result.name.indexOf(" "));
+    result.brief = "";
+    return result;
+  }
+};
+
+/**
  * @class GHDOC.Class
+ * @author schteppe
  * @brief A representation of a class.
  */
 GHDOC.Class = function(){
@@ -368,22 +474,12 @@ GHDOC.Class = function(){
   this.methods = [];
   this.properties = [];
   this.parameters = []; // for constructor
-};
-
-/**
- * A representation of a class method.
- * @class GHDOC.Method
- */
-GHDOC.Method = function(){
-  this.name = "(untitled method)";
   this.brief = "";
-  this.description = "";
-  this.parameters = [];
-  this.memberof = "";
 };
 
 /**
- * A representation of a function
+ * @brief A representation of a function
+ * @author schteppe
  * @class GHDOC.Function
  */
 GHDOC.Function = function(){
@@ -391,22 +487,60 @@ GHDOC.Function = function(){
   this.brief = "";
   this.description = "";
   this.parameters = [];
+  this.returnvalue = null;
 };
 
 /**
- * A representation of a class property.
+ * @brief A representation of a class method.
+ * @author schteppe
+ * @class GHDOC.Method
+ * @extends GHDOC.Function
+ */
+GHDOC.Method = function(){
+  this.memberof = "";
+  GHDOC.Function.call( this );
+};
+GHDOC.Method.prototype = new GHDOC.Function();
+
+/**
+ * @brief A representation of a class property.
+ * @author schteppe
  * @class GHDOC.Property
  */
 GHDOC.Property = function(){
   this.type = "";
   this.name = "";
+  this.brief = "";
 };
 
 /**
- * A representation of a class property.
- * @class GHDOC.Parameter
+ * @class GHDOC.Variable
+ * @brief A representation of a variable.
+ * @author schteppe
  */
-GHDOC.Parameter = function(){
+GHDOC.Variable = function(){
   this.type = "";
   this.name = "";
+  this.brief = "";
 };
+
+/**
+ * @brief A representation of a parameter.
+ * @author schteppe
+ * @class GHDOC.Parameter
+ * @extends GHDOC.Variable
+ */
+GHDOC.Parameter = function(){
+  GHDOC.Variable.call( this );
+};
+GHDOC.Parameter.prototype = new GHDOC.Variable();
+
+/**
+ * @class GHDOC.ReturnValue
+ * @brief Represents the return information
+ * @extends GHDOC.Variable 
+ */
+GHDOC.ReturnValue = function(){
+  GHDOC.Variable.call( this );
+};
+GHDOC.ReturnValue.prototype = new GHDOC.Variable();
