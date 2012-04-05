@@ -71,7 +71,7 @@ $(function(){
     function update(){
 
       // put all entities from all files in arrays
-      var mainpage, pages=[], files=[], classes=[], functions=[];
+      var mainpage, pages=[], files=[], classes=[], functions=[], methods=[];
       for(var i=0; i<branches[0].files.length; i++){
 	var f = branches[0].files[i];
 	// Add file
@@ -88,6 +88,10 @@ $(function(){
 	// Add classes
 	for(var j in f.classes)
 	  classes.push(f.classes[j]);
+
+	// Add methods
+	for(var j in f.methods)
+	  methods.push(f.methods[j]);
 
 	// Add functions
 	for(var j in f.functions)
@@ -133,14 +137,15 @@ $(function(){
 	  args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
 	}
 	var sign = c.name;
-	$details.append("<h2>"+c.name+"</h2>")
+	$details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
 	  .append("<p>"+c.brief+"</p>")
 	  .append("<h3>Public member functions</h3>");
 	var $methods = $("<ul></ul>").addClass("member_overview");
-	$methods.append("<li><label>&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
-	for(var k in classes[j].methods){
-	  var m = classes[j].methods[k]
-	  $methods.append("<li><label></label>" + m.name + " ( " + " )</li>");
+	$methods.append("<li><label class=\"datatype\">&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
+	for(var k in methods){
+	  var m = methods[k];
+	  if(m.memberof==c.name)
+	    $methods.append("<li><label class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</label>" + m.name + " ( " + " )</li>");
 	}
 	$details.append($methods);
 	$class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
@@ -148,7 +153,7 @@ $(function(){
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append("<div id=\"chart\"></div>")
+	//.append("<div id=\"chart\"></div>")
 	.append($ul)
 	.append($details);
 
@@ -400,7 +405,7 @@ GHDOC.ParseMethods = function(src){
     var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
     if(memberofs && memberofs.length>=1 && fns && fns.length>=1){
       var m = new GHDOC.Method();
-      m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"");
+      m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
       result.push(m);
@@ -617,6 +622,7 @@ GHDOC.Page = function(){
  * @fn toHTML
  * @memberof GHDOC.Page
  * @brief Returns the page content in HTML format.
+ * @return string
  */
 GHDOC.Page.prototype.toHTML = function(){
   return (this.content
