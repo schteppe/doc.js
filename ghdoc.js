@@ -70,6 +70,20 @@ $(function(){
 
     function update(){
 
+      // @todo put all entities from all files in arrays, and sort
+      var mainpage, pages=[];
+      for(var i=0; i<branches[0].files.length; i++){
+	var f = branches[0].files[i];
+	console.log(f.pages);
+	for(var j in f.pages){
+	  
+	  if(f.pages[j] instanceof GHDOC.MainPage)
+	    mainpage = f.pages[j];
+	  else
+	    pages.push(f.pages[j]);
+	}
+      }
+
       // Overview
       $("#overview")
 	.html("<h1>Overview</h1>")
@@ -95,7 +109,7 @@ $(function(){
 	  for(var k in c.parameters)
 	    args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
 	  var sign = c.name;
-	  $details.append("<h3>"+c.name+"</h3>")
+	  $details.append("<h2>"+c.name+"</h2>")
 	    .append("<p>"+c.brief+"</p>");
 	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	  $ul.append($class);
@@ -103,9 +117,8 @@ $(function(){
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append("<h2>Overview</h2><div id=\"chart\"></div>")
+	.append("<div id=\"chart\"></div>")
 	.append($ul)
-	.append("<h2>Details</h2>")
 	.append($details);
 
       // d3.js
@@ -169,9 +182,9 @@ $(function(){
 	  // Construct signature
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    args.push(p.type+ " " + p.name);
+	    args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
 	  }
-	  $details.append("<h3 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	  $details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
@@ -186,9 +199,7 @@ $(function(){
       }
       $("#functions")
 	.html("<h1>Functions</h1>")
-	.append("<h2>Overview</h2>")
 	.append($ul)
-	.append("<h2>Details</h2>")
 	.append($details);
     }
 
@@ -242,6 +253,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
   this.classes = [];
   this.methods = [];
   this.functions = [];
+  this.pages = [];
   this.content = null;
   this.returntype = "";
   this.brief = "";
@@ -257,6 +269,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
 	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
+	that.pages = that.pages.concat(GHDOC.ParsePages(data.blob.data));
 	opt.success();
       }
     });
@@ -362,6 +375,30 @@ GHDOC.ParseMethods = function(src){
       m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
       result.push(m);
+    }
+  }
+  return result;
+};
+
+/**
+ * @fn GHDOC.ParsePages
+ * @author schteppe
+ * @param string src
+ * @return array An array of parsed GHDOC.Page objects
+ */
+GHDOC.ParsePages = function(src){
+  var result = [];
+  // Get doc blocks a la doxygen
+  var blocks = GHDOC.ParseBlocks(src);
+  for(i in blocks){
+    // Pages got the @page command
+    var pages = blocks[i].match(/\@mainpage([^@]*)/g);
+    console.log(pages);
+    if(pages && pages.length>=1){
+      var p = pages[0].match("main") ? new GHDOC.MainPage() : new GHDOC.Page();
+      p.name = pages[0].replace(/[\s]*@(page|mainpage)[\s]*/,"").trim();
+      p.content = blocks[i].replace(/[\s]*@(page|mainpage)[\s]*.*/,"").trim();
+      result.push(p);
     }
   }
   return result;
@@ -538,6 +575,31 @@ GHDOC.Property = function(){
   this.name = "";
   this.brief = "";
 };
+
+/**
+ * @brief A representation of a page.
+ * @author schteppe
+ * @class GHDOC.Page
+ */
+GHDOC.Page = function(){
+  this.name = "";
+  this.content = "";
+};
+GHDOC.Page.prototype.toHTML = function(){
+  return ("<h1>"+this.name+"</h1>"+
+	  this.content.replace(/\@section\s*([\w+])/g,function(m,$1){return "<h2>"+$1+"</h2>";}));
+};
+
+/**
+ * @brief A representation of the main page.
+ * @author schteppe
+ * @class GHDOC.MainPage
+ * @extends GHDOC.Page
+ */
+GHDOC.MainPage = function(){
+  GHDOC.Page.call( this );
+};
+GHDOC.MainPage.prototype = new GHDOC.Page();
 
 /**
  * @class GHDOC.Variable
