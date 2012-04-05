@@ -146,7 +146,7 @@ $(function(){
 	    var p = f.parameters[k];
 	    args.push("<i>"+p.type+"</i>" + " " + p.name);
 	  }
-	  $details.append("<h3 id=\""+f.name+"\"><i>"+f.returntype + "</i> " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	  $details.append("<h3 id=\""+f.name+"\"><i>"+(f.returnvalue ? f.returnvalue.type : "void") + "</i> " + f.name+" ( "+args.join(" , ")+" )</h3>")
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
@@ -155,7 +155,7 @@ $(function(){
 	    $details.append("<h4><i>"+p.type+ "</i> " + p.name+"</h4><p>"+p.brief+"</p>");
 	  }
 
-	  $class = $("<li><label for=\""+f.name+"\">"+f.returntype+"</label><a href=\"#"+f.name+"\">"+f.name+" ( "+args.join(" , ")+" )</a></li>");
+	  $class = $("<li><label for=\""+f.name+"\">"+(f.returnvalue ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+" ( "+args.join(" , ")+" )</a></li>");
 	  $ul.append($class);
 	}
       }
@@ -188,6 +188,7 @@ var GHDOC = {};
 
 /**
  * @class GHDOC.File
+ * @author schteppe
  * @param string user
  * @param string repos
  * @param string branch
@@ -228,7 +229,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 	that.content = data.blob.data;
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
-	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));	
+	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
 	opt.success();
       }
     });
@@ -236,6 +237,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
 /**
  * @class GHDOC.Tree
+ * @author schteppe
  * @param string user
  * @param string repos
  * @param string branch
@@ -293,6 +295,7 @@ GHDOC.Tree = function(user,repos,branch,name,success){
 
 /**
  * @fn GHDOC.ParseBlocks
+ * @author schteppe
  * @brief Parse documentation blocks.
  * @param string src Source code to parse.
  */
@@ -314,6 +317,7 @@ GHDOC.ParseBlocks = function(src){
 
 /**
  * @fn GHDOC.ParseMethods
+ * @author schteppe
  * @param string src
  * @return array An array of parsed GHDOC.Method objects
  */
@@ -338,6 +342,7 @@ GHDOC.ParseMethods = function(src){
 
 /**
  * @fn GHDOC.ParseClasses
+ * @author schteppe
  * @brief Parse source code.
  * @param string src
  * @return array An array of parsed objects
@@ -368,6 +373,7 @@ GHDOC.ParseClasses = function(src){
 
 /**
  * @fn GHDOC.ParseFunctions
+ * @author schteppe
  * @param string src
  * @return array An array of parsed objects
  */
@@ -388,6 +394,7 @@ GHDOC.ParseFunctions = function(src){
       c.name = s.trim();
       c.parameters = GHDOC.ParseParameters(blocks[i]);
       c.brief = GHDOC.ParseBrief(blocks[i]);
+      c.returnvalue = GHDOC.ParseReturn(blocks[i]);
       result.push(c);
     }
   }
@@ -397,6 +404,7 @@ GHDOC.ParseFunctions = function(src){
 
 /**
  * @fn GHDOC.ParseParameters
+ * @author schteppe
  * @brief Parses parameter data from a string.
  * @param string src Source code to parse from.
  * @return array An array of GHDOC.Parameter objects
@@ -419,6 +427,7 @@ GHDOC.ParseParameters = function(src){
 
 /**
  * @fn GHDOC.ParseBrief
+ * @author schteppe
  * @brief Parses brief information from a code block
  * @param string src
  * @return string Brief description
@@ -435,7 +444,29 @@ GHDOC.ParseBrief = function(src){
 };
 
 /**
+ * @fn GHDOC.ParseReturn
+ * @author schteppe
+ * @brief Parses the information about the return value
+ * @param string src
+ * @return GHDOC.ReturnValue
+ */
+GHDOC.ParseReturn = function(src){
+  var returns = src.match(/@return([^@]*)/);
+  if(returns && returns.length){
+    var result = new GHDOC.ReturnValue();
+    var r = returns[j].replace(/[\s]*@return[\s]*/,"").trim();
+    console.log(r,result);
+    result.type = r.substr(0,r.indexOf(" "));
+    result.name = r.substr(r.indexOf(" "));
+    result.name = result.name.substr(0,result.name.indexOf(" "));
+    result.brief = "";
+    return result;
+  }
+};
+
+/**
  * @class GHDOC.Class
+ * @author schteppe
  * @brief A representation of a class.
  */
 GHDOC.Class = function(){
@@ -447,7 +478,8 @@ GHDOC.Class = function(){
 };
 
 /**
- * A representation of a function
+ * @brief A representation of a function
+ * @author schteppe
  * @class GHDOC.Function
  */
 GHDOC.Function = function(){
@@ -455,11 +487,12 @@ GHDOC.Function = function(){
   this.brief = "";
   this.description = "";
   this.parameters = [];
-  this.returntype = "";
+  this.returnvalue = null;
 };
 
 /**
- * A representation of a class method.
+ * @brief A representation of a class method.
+ * @author schteppe
  * @class GHDOC.Method
  * @extends GHDOC.Function
  */
@@ -470,7 +503,8 @@ GHDOC.Method = function(){
 GHDOC.Method.prototype = new GHDOC.Function();
 
 /**
- * A representation of a class property.
+ * @brief A representation of a class property.
+ * @author schteppe
  * @class GHDOC.Property
  */
 GHDOC.Property = function(){
@@ -480,11 +514,33 @@ GHDOC.Property = function(){
 };
 
 /**
- * A representation of a parameter.
- * @class GHDOC.Parameter
+ * @class GHDOC.Variable
+ * @brief A representation of a variable.
+ * @author schteppe
  */
-GHDOC.Parameter = function(){
+GHDOC.Variable = function(){
   this.type = "";
   this.name = "";
   this.brief = "";
 };
+
+/**
+ * @brief A representation of a parameter.
+ * @author schteppe
+ * @class GHDOC.Parameter
+ * @extends GHDOC.Variable
+ */
+GHDOC.Parameter = function(){
+  GHDOC.Variable.call( this );
+};
+GHDOC.Parameter.prototype = new GHDOC.Variable();
+
+/**
+ * @class GHDOC.ReturnValue
+ * @brief Represents the return information
+ * @extends GHDOC.Variable 
+ */
+GHDOC.ReturnValue = function(){
+  GHDOC.Variable.call( this );
+};
+GHDOC.ReturnValue.prototype = new GHDOC.Variable();
