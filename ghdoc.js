@@ -61,25 +61,27 @@ $(function(){
 	.append($ul);
 
       // Classes
-      var $ul = $("<ul></ul>");
+      var $ul = $("<ul class=\"class_overview\"></ul>");
+      var $details = $("<div></div>");
       for(var i=0; i<branches[0].files.length; i++){
 	var file = branches[0].files[i];
 	for(var j=0; j<file.classes.length; j++){
-	  var args = [];
-	  for(var k in file.classes[j].parameters)
-	    args.push("<i>"+file.classes[j].parameters[k].type+"</i>" + " " + file.classes[j].parameters[k].name);
-	  $class = $("<li>"+file.classes[j].name+" ( "+args.join(" , ")+" ) </li>");
-	  $sub = $("<ul></ul>");
-	  for(var k in file.classes[j].methods.length)
-	    $sub.append("<li>"+file.classes[j].methods[k].name+"</li>");
-	  $class.append($sub);
+	  var args = [], c = file.classes[j];
+	  for(var k in c.parameters)
+	    args.push("<i>"+c.parameters[k].type+"</i>" + " " + c.parameters[k].name);
+	  var sign = c.name+" ( "+args.join(" , ")+" )";
+	  $details.append("<h3>"+c.name+"</h3>")
+	    .append("<p>"+c.brief+"</p>");
+	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	  $ul.append($class);
 	}
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
-	.append("<div id=\"chart\"></div>")
-	.append($ul);
+	.append("<h2>Overview</h2><div id=\"chart\"></div>")
+	.append($ul)
+	.append("<h2>Details</h2>")
+	.append($details);
 
       // d3.js
       var w = 900,h = 170;
@@ -131,7 +133,7 @@ $(function(){
 	.text(function(d) { return d.name; });
 
       // Functions
-      var $ul = $("<ul></ul>");
+      var $ul = $("<ul class=\"function_overview\"></ul>");
       var $details = $("<div></div>");
       for(var i=0; i<branches[0].files.length; i++){
 	var file = branches[0].files[i];
@@ -144,7 +146,7 @@ $(function(){
 	    var p = f.parameters[k];
 	    args.push("<i>"+p.type+"</i>" + " " + p.name);
 	  }
-	  $details.append("<h3>"+f.returntype + " " + f.name+" ( "+args.join(" , ")+" )</h3>")
+	  $details.append("<h3 id=\""+f.name+"\"><i>"+f.returntype + "</i> " + f.name+" ( "+args.join(" , ")+" )</h3>")
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
@@ -153,7 +155,7 @@ $(function(){
 	    $details.append("<h4><i>"+p.type+ "</i> " + p.name+"</h4><p>"+p.brief+"</p>");
 	  }
 
-	  $class = $("<li>"+f.name+" ( "+args.join(" , ")+" ) </li>");
+	  $class = $("<li><label for=\""+f.name+"\">"+f.returntype+"</label><a href=\"#"+f.name+"\">"+f.name+" ( "+args.join(" , ")+" )</a></li>");
 	  $ul.append($class);
 	}
       }
@@ -357,6 +359,7 @@ GHDOC.ParseClasses = function(src){
       var c = new GHDOC.Class();
       c.name = s.trim();
       c.parameters = GHDOC.ParseParameters(blocks[i]);
+      c.brief = GHDOC.ParseBrief(blocks[i]);
       result.push(c);
     }
   }
@@ -404,13 +407,11 @@ GHDOC.ParseParameters = function(src){
   for(j in params){
     params[j] = params[j]
       .replace(/[\s]*@param[\s]*/,"");
-    var s = params[j].split(" ");
+    var s = params[j].split(" ",2);
     var param = new GHDOC.Parameter();
     param.type = s[0].trim();
     param.name = s[1].trim();
-    s.shift(); s.shift();
-    console.log(s);
-    param.brief = s;
+    param.brief = params[j].replace(s[0],"").replace(s[1],"").trim();
     result.push(param);
   }
   return result;
@@ -442,18 +443,7 @@ GHDOC.Class = function(){
   this.methods = [];
   this.properties = [];
   this.parameters = []; // for constructor
-};
-
-/**
- * A representation of a class method.
- * @class GHDOC.Method
- */
-GHDOC.Method = function(){
-  this.name = "(untitled method)";
   this.brief = "";
-  this.description = "";
-  this.parameters = [];
-  this.memberof = "";
 };
 
 /**
@@ -467,6 +457,17 @@ GHDOC.Function = function(){
   this.parameters = [];
   this.returntype = "";
 };
+
+/**
+ * A representation of a class method.
+ * @class GHDOC.Method
+ * @extends GHDOC.Function
+ */
+GHDOC.Method = function(){
+  this.memberof = "";
+  GHDOC.Function.call( this );
+};
+GHDOC.Method.prototype = new GHDOC.Function();
 
 /**
  * A representation of a class property.

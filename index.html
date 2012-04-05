@@ -10,6 +10,9 @@
     <link href="http://code.jquery.com/ui/jquery-ui-git.css" rel="stylesheet" type="text/css" />
     <link href="dendogram.css" rel="stylesheet" type="text/css" />
     <style>
+      html {
+        overflow-y: scroll;
+      }
       body {
         width:1000px;
         margin-left:auto;
@@ -27,6 +30,22 @@
       footer {
         text-align:center;
         font-size:10px;
+      }
+      ul.function_overview, ul.class_overview {
+        list-style-type:none;
+        padding: 0px;
+        margin: 0px 10px;
+      }
+      ul.function_overview a, ul.class_overview a {
+        text-decoration:none;
+      }
+      ul.function_overview label, ul.class_overview label {
+        width:100px;
+        display:block;
+        float:left;
+        margin-right:7px;
+        text-align:right;
+        font-style:italic;
       }
     </style>
   </head>
