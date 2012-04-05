@@ -53,6 +53,23 @@ Currently only slash-star comment blocks are supported. Works great in e.g. Java
  */
 ```
 
+### Page and MainPage
+Use the @mainpage to create the first page in your documentation. The @page command works in the same way, but creates a new separate page in your doc.
+
+```
+/**
+ * @mainpage My Personal Index Page
+ *
+ * @section intro_sec Introduction
+ * This is the introduction.
+ *
+ * @section install_sec Installation
+ *
+ * @subsection step1 Step 1: Opening the box
+ * etc...
+ */
+```
+
 ## How it works
 * Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
 * Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
