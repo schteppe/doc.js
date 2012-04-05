@@ -129,11 +129,20 @@ $(function(){
       var $details = $("<div></div>");
       for(var j=0; j<classes.length; j++){
 	var args = [], c = classes[j];
-	for(var k in c.parameters)
+	for(var k in c.parameters){
 	  args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	}
 	var sign = c.name;
 	$details.append("<h2>"+c.name+"</h2>")
-	  .append("<p>"+c.brief+"</p>");
+	  .append("<p>"+c.brief+"</p>")
+	  .append("<h3>Public member functions</h3>");
+	var $methods = $("<ul></ul>").addClass("member_overview");
+	$methods.append("<li><label>&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
+	for(var k in classes[j].methods){
+	  var m = classes[j].methods[k]
+	  $methods.append("<li><label></label>" + m.name + " ( " + " )</li>");
+	}
+	$details.append($methods);
 	$class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	$ul.append($class);
       }
@@ -604,6 +613,11 @@ GHDOC.Page = function(){
   this.name = "";
   this.content = "";
 };
+/**
+ * @fn toHTML
+ * @memberof GHDOC.Page
+ * @brief Returns the page content in HTML format.
+ */
 GHDOC.Page.prototype.toHTML = function(){
   return (this.content
 	  .replace(/\@section\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h2 id=\""+$1+"\">"+$2+"</h2>";})
