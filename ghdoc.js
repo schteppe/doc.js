@@ -70,23 +70,45 @@ $(function(){
 
     function update(){
 
-      // @todo put all entities from all files in arrays, and sort
-      var mainpage, pages=[];
+      // put all entities from all files in arrays
+      var mainpage, pages=[], files=[], classes=[], functions=[];
       for(var i=0; i<branches[0].files.length; i++){
 	var f = branches[0].files[i];
+	// Add file
+	files.push(f);
+
+	// Add pages
 	for(var j in f.pages){
 	  if(f.pages[j] instanceof GHDOC.MainPage)
 	    mainpage = f.pages[j];
 	  else
 	    pages.push(f.pages[j]);
 	}
+
+	// Add classes
+	for(var j in f.classes)
+	  classes.push(f.classes[j]);
+
+	// Add functions
+	for(var j in f.functions)
+	  functions.push(f.functions[j]);
       }
+
+      // Sort
+      var sortbyname=function(a,b){
+	if(a.name>b.name) return 1;
+	if(a.name<b.name) return -1;
+	else return 0;
+      };
+      pages.sort(sortbyname);
+      classes.sort(sortbyname);
+      functions.sort(sortbyname);
 
       // Main page
       if(!mainpage)
 	$("#overview")
 	  .html("<h1>Main page</h1>")
-	  .append("<p>This page is not written yet. Nothing to see here!</p>");
+	  .append("<p>This page is not written yet. Carry on!</p>");
       else
 	$("#overview")
 	  .html("<h1>"+mainpage.name+"</h1>")
@@ -94,8 +116,8 @@ $(function(){
 
       // Files
       var $ul = $("<ul></ul>");
-      for(var i=0; i<branches[0].files.length; i++){
-	var f = branches[0].files[i];
+      for(var i=0; i<files.length; i++){
+	var f = files[i];
 	$ul.append("<li><a href=\"https://github.com/"+username+"/"+repository+"/blob/"+branchname+"/"+f.name+"\">"+f.name+"</a> "+f.brief+"</li>");
       }
       $("#files")
@@ -105,18 +127,15 @@ $(function(){
       // Classes
       var $ul = $("<ul class=\"class_overview\"></ul>");
       var $details = $("<div></div>");
-      for(var i=0; i<branches[0].files.length; i++){
-	var file = branches[0].files[i];
-	for(var j=0; j<file.classes.length; j++){
-	  var args = [], c = file.classes[j];
-	  for(var k in c.parameters)
-	    args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
-	  var sign = c.name;
-	  $details.append("<h2>"+c.name+"</h2>")
-	    .append("<p>"+c.brief+"</p>");
-	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
-	  $ul.append($class);
-	}
+      for(var j=0; j<classes.length; j++){
+	var args = [], c = classes[j];
+	for(var k in c.parameters)
+	  args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	var sign = c.name;
+	$details.append("<h2>"+c.name+"</h2>")
+	  .append("<p>"+c.brief+"</p>");
+	$class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
+	$ul.append($class);
       }
       $("#classes")
 	.html("<h1>Classes</h1>")
@@ -176,29 +195,26 @@ $(function(){
       // Functions
       var $ul = $("<ul class=\"function_overview\"></ul>");
       var $details = $("<div></div>");
-      for(var i=0; i<branches[0].files.length; i++){
-	var file = branches[0].files[i];
-	for(var j=0; j<file.functions.length; j++){
-	  var args = [];
-	  var f = file.functions[j];
+      for(var j=0; j<functions.length; j++){
+	var args = [];
+	var f = functions[j];
 
-	  // Construct signature
-	  for(var k in f.parameters){
-	    var p = f.parameters[k];
-	    args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
-	  }
-	  $details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
-	    .append("<p>"+f.brief+"</p>");
-
-	  // Parameter details
-	  for(var k in f.parameters){
-	    var p = f.parameters[k];
-	    $details.append("<h4><span class=\"datatype\">"+p.type+ "</span> " + p.name+"</h4><p>"+p.brief+"</p>");
-	  }
-
-	  $class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
-	  $ul.append($class);
+	// Construct signature
+	for(var k in f.parameters){
+	  var p = f.parameters[k];
+	  args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
 	}
+	$details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "void") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
+	  .append("<p>"+f.brief+"</p>");
+
+	// Parameter details
+	for(var k in f.parameters){
+	  var p = f.parameters[k];
+	  $details.append("<h4><span class=\"datatype\">"+p.type+ "</span> " + p.name+"</h4><p>"+p.brief+"</p>");
+	}
+
+	$class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "void")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
+	$ul.append($class);
       }
       $("#functions")
 	.html("<h1>Functions</h1>")
