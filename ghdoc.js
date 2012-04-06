@@ -133,7 +133,7 @@ $(function(){
 	  .append($ul);
 
 	// Classes
-	var $ul = $("<ul class=\"class_overview\"></ul>");
+	var $ul = $("<table class=\"class_overview\"></table>");
 	var $details = $("<div></div>");
 	for(var j=0; j<classes.length; j++){
 	  var args = [], c = classes[j];
@@ -158,7 +158,7 @@ $(function(){
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
-	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td></tr>");
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td>" + p.brief + "</td></tr>");
 	      np++;
 	    }
 	  }
@@ -172,7 +172,7 @@ $(function(){
 	      .append($properties);
 	  }
 
-	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
+	  $class = $("<tr><td><a href=\"#"+c.name+"\">"+sign+"</a></td></tr>");
 	  $ul.append($class);
 	}
 	$("#classes")
@@ -246,10 +246,12 @@ $(function(){
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
+	  $params = $("<table></table>");
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
+	    $params.append("<tr><th><span class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+ "</span> <span class=\"param\">" + p.name+"</span></th><td>"+p.brief+"</td></tr>");
 	  }
+	  $details.append($params);
 
 	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
 	  $ul.append($class);
@@ -258,6 +260,7 @@ $(function(){
 	  .html("<h1>Functions</h1>")
 	  .append($ul)
 	  .append($details);
+	$("table").addClass("ui-tabs ui-widget ui-widget-content ui-corner-all");
       }
     }
     GHDOC.update = update;
