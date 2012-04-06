@@ -155,7 +155,6 @@ $(function(){
 	  }
 
 	  var $properties = $("<table></table>").addClass("member_overview");
-	  console.log(properties);
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
@@ -315,12 +314,41 @@ GHDOC.File = function(user,repos,branch,filename,options){
    * @memberof GHDOC.File
    */
   this.classes = [];
+
+  /**
+   * @property array methods
+   * @memberof GHDOC.File
+   */
   this.methods = [];
+
+  /**
+   * @property array functions
+   * @memberof GHDOC.File
+   */
   this.functions = [];
+
+  /**
+   * @property array pages
+   * @memberof GHDOC.File
+   */
   this.pages = [];
+
+  /**
+   * @property array properties
+   * @memberof GHDOC.File
+   */
   this.properties = [];
+
+  /**
+   * @property string content
+   * @memberof GHDOC.File
+   */
   this.content = null;
-  this.returntype = "";
+
+  /**
+   * @property string brief
+   * @memberof GHDOC.File
+   */
   this.brief = "";
 
   // Get file contents
@@ -355,9 +383,29 @@ GHDOC.File = function(user,repos,branch,filename,options){
 GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
   success = success || function(){};
   filesuccess = filesuccess || function(){};
+
+  /**
+   * @property array patterns
+   * @memberof GHDOC.Tree
+   */
   this.patterns = [];
+
+  /**
+   * @property string ghdocfile
+   * @memberof GHDOC.Tree
+   */
   this.ghdocfile = null;
+
+  /**
+   * @property string name
+   * @memberof GHDOC.Tree
+   */
   this.name = name || "Untitled branch";
+
+  /**
+   * @property array files
+   * @memberof GHDOC.Tree
+   */
   this.files = [];
   var that = this;
 
