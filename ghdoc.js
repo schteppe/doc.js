@@ -71,7 +71,7 @@ $(function(){
     function update(){
       if(GHDOC.numTasks==0){
 	// put all entities from all files in arrays
-	var mainpage, pages=[], files=[], classes=[], functions=[], methods=[];
+	var mainpage, pages=[], files=[], classes=[], functions=[], methods=[], properties=[];
 	for(var i=0; i<branches[0].files.length; i++){
 	  var f = branches[0].files[i];
 	  // Add file
@@ -92,6 +92,10 @@ $(function(){
 	  // Add methods
 	  for(var j in f.methods)
 	    methods.push(f.methods[j]);
+
+	  // Add properties
+	  for(var j in f.properties)
+	    properties.push(f.properties[j]);
 
 	  // Add functions
 	  for(var j in f.functions)
@@ -138,8 +142,9 @@ $(function(){
 	  }
 	  var sign = c.name;
 	  $details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
-	    .append("<p>"+c.brief+"</p>")
-	    .append("<h3>Public member functions</h3>");
+	    .append("<p>"+c.brief+"</p>");
+
+	  // Methods
 	  var $methods = $("<table></table>").addClass("member_overview");
 	  $methods.append("<tr><td class=\"datatype\">&nbsp;</td><td>" + c.name + " ( " + args.join(" , ") + " )</td></tr>");
 	  for(var k in methods){
@@ -148,7 +153,22 @@ $(function(){
 	      $methods.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " + " )</td></tr>");
 	    }
 	  }
-	  $details.append($methods);
+
+	  var $properties = $("<table></table>").addClass("member_overview");
+	  console.log(properties);
+	  for(var k in properties){
+	    var p = properties[k];
+	    if(p.memberof==c.name){
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td></tr>");
+	    }
+	  }
+	  
+	  $details
+	    .append("<h3>Public member functions</h3>")
+	    .append($methods)
+	    .append("<h3>Properties</h3>")
+	    .append($properties);
+
 	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	  $ul.append($class);
 	}
@@ -285,19 +305,20 @@ GHDOC.File = function(user,repos,branch,filename,options){
   $.extend(opt,options);
 
   /**
-   * @property name
+   * @property string name
    * @memberof GHDOC.File
    */
   this.name = filename;
 
   /**
-   * @property classes
+   * @property array classes
    * @memberof GHDOC.File
    */
   this.classes = [];
   this.methods = [];
   this.functions = [];
   this.pages = [];
+  this.properties = [];
   this.content = null;
   this.returntype = "";
   this.brief = "";
@@ -314,6 +335,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 	that.functions = that.functions.concat(GHDOC.ParseFunctions(data.blob.data));
 	that.methods = that.methods.concat(GHDOC.ParseMethods(data.blob.data));
 	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
+	that.properties = that.properties.concat(GHDOC.ParseProperties(data.blob.data));
 	that.pages = that.pages.concat(GHDOC.ParsePages(data.blob.data));
 	opt.success();
 	GHDOC.numTasks--;
@@ -554,6 +576,38 @@ GHDOC.ParseParameters = function(src){
     param.name = s[1].trim();
     param.brief = params[j].replace(s[0],"").replace(s[1],"").trim();
     result.push(param);
+  }
+  return result;
+};
+
+/**
+ * @fn GHDOC.ParseParameters
+ * @author schteppe
+ * @brief Parses parameter data from a string.
+ * @param string src Source code to parse from.
+ * @return array An array of GHDOC.Parameter objects
+ */
+GHDOC.ParseProperties = function(src){
+  var result = [];
+
+  var blocks = GHDOC.ParseBlocks(src);
+  for(i in blocks){
+    // Properties have @property and @memberof commands
+    var properties = blocks[i].match(/\@property([^\n])*/),
+      memberofs = blocks[i].match(/\@memberof([^\n])*/);
+    if(properties && memberofs){
+      properties[0] = properties[0]
+	.replace(/[\s]*@property[\s]*/,"");
+      var s = properties[0].split(" ");
+      if(s.length<2)
+	throw "@param needs two parameters, type and name";
+      var property = new GHDOC.Property();
+      property.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
+      property.type = s.shift().trim();
+      property.name = s.shift().trim();
+      property.brief = s.join(" ").trim();
+      result.push(property);
+    }
   }
   return result;
 };
