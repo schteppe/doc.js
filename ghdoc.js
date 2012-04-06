@@ -581,11 +581,10 @@ GHDOC.ParseParameters = function(src){
 };
 
 /**
- * @fn GHDOC.ParseParameters
+ * @fn GHDOC.ParseProperties
  * @author schteppe
- * @brief Parses parameter data from a string.
  * @param string src Source code to parse from.
- * @return array An array of GHDOC.Parameter objects
+ * @return array An array of GHDOC.Property objects
  */
 GHDOC.ParseProperties = function(src){
   var result = [];
