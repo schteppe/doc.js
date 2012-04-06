@@ -31,26 +31,32 @@
         margin:10px;
       }
       h1 {
+        font-size:20px;
         padding:0px;
         margin:10px 0px;
       }
+      h2 { font-size:16px; color:#333; }
+      h3 { font-size:14px; color:#666; }
+      h4 { font-size:12px; color:#777; }
       footer {
         text-align:center;
         font-size:10px;
       }
-      ul.function_overview, ul.class_overview {
+      ul.function_overview, ul.class_overview, ul.member_overview {
         list-style-type:none;
         padding: 0px;
         margin: 0px 10px;
       }
-      ul.function_overview a, ul.class_overview a {
-      }
-      ul.function_overview label, ul.class_overview label {
+      ul.function_overview label, ul.class_overview label, ul.member_overview label {
         width:100px;
         display:block;
         float:left;
         margin-right:7px;
         text-align:right;
+      }
+      table.function_overview td.datatype, table.member_overview td.datatype {
+        text-align:right;
+        padding-right:7px;
       }
       .datatype {
         font-style:italic;
@@ -71,16 +77,20 @@
 	<li><a href="#files">Files</a></li>
       </ul>    
 
-      <section id="overview">	
+      <section id="overview">
+	<h1>Loading...</h1>
       </section>
 
       <section id="classes">
+	<h1>Loading...</h1>
       </section>
 
       <section id="files">
+	<h1>Loading...</h1>
       </section>
 
       <section id="functions">
+	<h1>Loading...</h1>
       </section>
       
       <footer>
