@@ -154,19 +154,23 @@ $(function(){
 	    }
 	  }
 
-	  var $properties = $("<table></table>").addClass("member_overview");
+	  var np=0, $properties = $("<table></table>").addClass("member_overview");
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
 	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td></tr>");
+	      np++;
 	    }
 	  }
 	  
 	  $details
 	    .append("<h3>Public member functions</h3>")
-	    .append($methods)
-	    .append("<h3>Properties</h3>")
-	    .append($properties);
+	    .append($methods);
+	  if(np){
+	    $details
+	      .append("<h3>Properties</h3>")
+	      .append($properties);
+	  }
 
 	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
 	  $ul.append($class);
