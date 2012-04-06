@@ -69,191 +69,202 @@ $(function(){
     $("header p").html(desc);
 
     function update(){
+      if(GHDOC.numTasks==0){
+	// put all entities from all files in arrays
+	var mainpage, pages=[], files=[], classes=[], functions=[], methods=[];
+	for(var i=0; i<branches[0].files.length; i++){
+	  var f = branches[0].files[i];
+	  // Add file
+	  files.push(f);
 
-      // put all entities from all files in arrays
-      var mainpage, pages=[], files=[], classes=[], functions=[], methods=[];
-      for(var i=0; i<branches[0].files.length; i++){
-	var f = branches[0].files[i];
-	// Add file
-	files.push(f);
+	  // Add pages
+	  for(var j in f.pages){
+	    if(f.pages[j] instanceof GHDOC.MainPage)
+	      mainpage = f.pages[j];
+	    else
+	      pages.push(f.pages[j]);
+	  }
 
-	// Add pages
-	for(var j in f.pages){
-	  if(f.pages[j] instanceof GHDOC.MainPage)
-	    mainpage = f.pages[j];
-	  else
-	    pages.push(f.pages[j]);
+	  // Add classes
+	  for(var j in f.classes)
+	    classes.push(f.classes[j]);
+
+	  // Add methods
+	  for(var j in f.methods)
+	    methods.push(f.methods[j]);
+
+	  // Add functions
+	  for(var j in f.functions)
+	    functions.push(f.functions[j]);
 	}
 
-	// Add classes
-	for(var j in f.classes)
-	  classes.push(f.classes[j]);
+	// Sort
+	var sortbyname=function(a,b){
+	  if(a.name>b.name) return 1;
+	  if(a.name<b.name) return -1;
+	  else return 0;
+	};
+	pages.sort(sortbyname);
+	classes.sort(sortbyname);
+	functions.sort(sortbyname);
 
-	// Add methods
-	for(var j in f.methods)
-	  methods.push(f.methods[j]);
+	// Main page
+	if(!mainpage)
+	  $("#overview")
+	    .html("<h1>Main page</h1>")
+	    .append("<p>This page is not written yet. Carry on!</p>");
+	else
+	  $("#overview")
+	    .html("<h1>"+mainpage.name+"</h1>")
+	    .append(mainpage.toHTML());
 
-	// Add functions
-	for(var j in f.functions)
-	  functions.push(f.functions[j]);
-      }
-
-      // Sort
-      var sortbyname=function(a,b){
-	if(a.name>b.name) return 1;
-	if(a.name<b.name) return -1;
-	else return 0;
-      };
-      pages.sort(sortbyname);
-      classes.sort(sortbyname);
-      functions.sort(sortbyname);
-
-      // Main page
-      if(!mainpage)
-	$("#overview")
-	  .html("<h1>Main page</h1>")
-	  .append("<p>This page is not written yet. Carry on!</p>");
-      else
-	$("#overview")
-	  .html("<h1>"+mainpage.name+"</h1>")
-	  .append(mainpage.toHTML());
-
-      // Files
-      var $ul = $("<ul></ul>");
-      for(var i=0; i<files.length; i++){
-	var f = files[i];
-	$ul.append("<li><a href=\"https://github.com/"+username+"/"+repository+"/blob/"+branchname+"/"+f.name+"\">"+f.name+"</a> "+f.brief+"</li>");
-      }
-      $("#files")
-	.html("<h1>Files</h1>")
-	.append($ul);
-
-      // Classes
-      var $ul = $("<ul class=\"class_overview\"></ul>");
-      var $details = $("<div></div>");
-      for(var j=0; j<classes.length; j++){
-	var args = [], c = classes[j];
-	for(var k in c.parameters){
-	  args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	// Files
+	var $ul = $("<ul></ul>");
+	for(var i=0; i<files.length; i++){
+	  var f = files[i];
+	  $ul.append("<li><a href=\"https://github.com/"+username+"/"+repository+"/blob/"+branchname+"/"+f.name+"\">"+f.name+"</a> "+f.brief+"</li>");
 	}
-	var sign = c.name;
-	$details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
-	  .append("<p>"+c.brief+"</p>")
-	  .append("<h3>Public member functions</h3>");
-	var $methods = $("<ul></ul>").addClass("member_overview");
-	$methods.append("<li><label class=\"datatype\">&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
-	for(var k in methods){
-	  var m = methods[k];
-	  if(m.memberof==c.name)
-	    $methods.append("<li><label class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</label>" + m.name + " ( " + " )</li>");
+	$("#files")
+	  .html("<h1>Files</h1>")
+	  .append($ul);
+
+	// Classes
+	var $ul = $("<ul class=\"class_overview\"></ul>");
+	var $details = $("<div></div>");
+	for(var j=0; j<classes.length; j++){
+	  var args = [], c = classes[j];
+	  for(var k in c.parameters){
+	    args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	  }
+	  var sign = c.name;
+	  $details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
+	    .append("<p>"+c.brief+"</p>")
+	    .append("<h3>Public member functions</h3>");
+	  var $methods = $("<ul></ul>").addClass("member_overview");
+	  $methods.append("<li><label class=\"datatype\">&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
+	  for(var k in methods){
+	    var m = methods[k];
+	    if(m.memberof==c.name){
+	      $methods.append("<li><label class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</label>" + m.name + " ( " + " )</li>");
+	    }
+	  }
+	  $details.append($methods);
+	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
+	  $ul.append($class);
 	}
-	$details.append($methods);
-	$class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
-	$ul.append($class);
-      }
-      $("#classes")
-	.html("<h1>Classes</h1>")
-	//.append("<div id=\"chart\"></div>")
-	.append($ul)
-	.append($details);
+	$("#classes")
+	  .html("<h1>Classes</h1>")
+	  //.append("<div id=\"chart\"></div>")
+	  .append($ul)
+	  .append($details);
 
-      // d3.js
-      var w = 900,h = 170;
-      var cluster = d3.layout.cluster()
-	.size([h, w - 160]);
-      var diagonal = d3.svg.diagonal()
-	.projection(function(d) { return [d.y, d.x]; });
-      var vis = d3.select("#chart").append("svg")
-	.attr("width", w)
-	.attr("height", h)
-	.append("g")
-	.attr("transform", "translate(70, 0)");
-      var data = {
-	"name": "BaseClass",
-	"children": [
-      {
-        "name": "SubClass",
-        "children": [
-      {
-	"name": "SubSubClass",
-	"children": [
-      {"name": "SubSubSubClass1", "size": 3938},
-      {"name": "SubSubSubClass2", "size": 3812},
-      {"name": "SubSubSubClass2", "size": 6714},
-      {"name": "SubSubSubClass3", "size": 743}
-		     ]
-      }
-		     ]
-      }
-		     ]
-      };
-      var nodes = cluster.nodes(data);
-      var link = vis.selectAll("path.link")
-	.data(cluster.links(nodes))
-	.enter().append("path")
-	.attr("class", "link")
-	.attr("d", diagonal);
-      var node = vis.selectAll("g.node")
-	.data(nodes)
-	.enter().append("g")
-	.attr("class", "node")
-	.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-	node.append("circle")
-	.attr("r", 4.5);
-      node.append("text")
-	.attr("dx", function(d) { return d.children ? -8 : 8; })
-	.attr("dy", 3)
-	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-	.text(function(d) { return d.name; });
-
-      // Functions
-      var $ul = $("<ul class=\"function_overview\"></ul>");
-      var $details = $("<div></div>");
-      for(var j=0; j<functions.length; j++){
-	var args = [];
-	var f = functions[j];
-
-	// Construct signature
-	for(var k in f.parameters){
-	  var p = f.parameters[k];
-	  args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
+	// d3.js
+	var w = 900,h = 170;
+	var cluster = d3.layout.cluster()
+	  .size([h, w - 160]);
+	var diagonal = d3.svg.diagonal()
+	  .projection(function(d) { return [d.y, d.x]; });
+	var vis = d3.select("#chart").append("svg")
+	  .attr("width", w)
+	  .attr("height", h)
+	  .append("g")
+	  .attr("transform", "translate(70, 0)");
+	var data = {
+	  "name": "BaseClass",
+	  "children": [
+	{
+	  "name": "SubClass",
+	  "children": [
+	{
+	  "name": "SubSubClass",
+	  "children": [
+	{"name": "SubSubSubClass1", "size": 3938},
+	{"name": "SubSubSubClass2", "size": 3812},
+	{"name": "SubSubSubClass2", "size": 6714},
+	{"name": "SubSubSubClass3", "size": 743}
+		       ]
 	}
-	$details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
-	  .append("<p>"+f.brief+"</p>");
-
-	// Parameter details
-	for(var k in f.parameters){
-	  var p = f.parameters[k];
-	  $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
+		       ]
 	}
+		       ]
+	};
+	var nodes = cluster.nodes(data);
+	var link = vis.selectAll("path.link")
+	  .data(cluster.links(nodes))
+	  .enter().append("path")
+	  .attr("class", "link")
+	  .attr("d", diagonal);
+	var node = vis.selectAll("g.node")
+	  .data(nodes)
+	  .enter().append("g")
+	  .attr("class", "node")
+	  .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+	  node.append("circle")
+	  .attr("r", 4.5);
+	node.append("text")
+	  .attr("dx", function(d) { return d.children ? -8 : 8; })
+	  .attr("dy", 3)
+	  .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+	  .text(function(d) { return d.name; });
 
-	$class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
-	$ul.append($class);
+	// Functions
+	var $ul = $("<ul class=\"function_overview\"></ul>");
+	var $details = $("<div></div>");
+	for(var j=0; j<functions.length; j++){
+	  var args = [];
+	  var f = functions[j];
+
+	  // Construct signature
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
+	  }
+	  $details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
+	    .append("<p>"+f.brief+"</p>");
+
+	  // Parameter details
+	  for(var k in f.parameters){
+	    var p = f.parameters[k];
+	    $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
+	  }
+
+	  $class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
+	  $ul.append($class);
+	}
+	$("#functions")
+	  .html("<h1>Functions</h1>")
+	  .append($ul)
+	  .append($details);
       }
-      $("#functions")
-	.html("<h1>Functions</h1>")
-	.append($ul)
-	.append($details);
     }
+    GHDOC.update = update;
 
     // Get the file tree
+    GHDOC.numTasks++;
+    var url = "http://github.com/api/v2/json/repos/show/"+username+"/"+repository+"/branches";
     $.ajax({
-	url:"http://github.com/api/v2/json/repos/show/"+username+"/"+repository+"/branches",
+	url:url,
 	dataType:'jsonp',
 	success:function(data){
 	  // Loop through branches
 	  for(branch in data.branches){
 	    if(branch==branchname){
-	      var t = new GHDOC.Tree(username,repository, data.branches[branch], branch, update);
+	      var t = new GHDOC.Tree(username,
+				     repository,
+				     data.branches[branch],
+				     branch);
 	      branches.push(t);
 	    }
 	  }
+	  GHDOC.numTasks--;
 	  update();
 	}
       });
   });
 
 var GHDOC = {};
+
+GHDOC.numTasks = 0;
 
 /**
  * @class GHDOC.File
@@ -294,6 +305,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
   // Get file contents
   var that = this;
   var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename;
+  GHDOC.numTasks++;
   $.ajax({
       url:url,
       dataType:'jsonp',
@@ -304,6 +316,8 @@ GHDOC.File = function(user,repos,branch,filename,options){
 	that.classes = that.classes.concat(GHDOC.ParseClasses(data.blob.data));
 	that.pages = that.pages.concat(GHDOC.ParsePages(data.blob.data));
 	opt.success();
+	GHDOC.numTasks--;
+	GHDOC.update();
       }
     });
 };
@@ -316,8 +330,9 @@ GHDOC.File = function(user,repos,branch,filename,options){
  * @param string branch
  * @param string name
  */
-GHDOC.Tree = function(user,repos,branch,name,success){
+GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
   success = success || function(){};
+  filesuccess = filesuccess || function(){};
   this.patterns = [];
   this.ghdocfile = null;
   this.name = name || "Untitled branch";
@@ -330,16 +345,18 @@ GHDOC.Tree = function(user,repos,branch,name,success){
     return false;
   }
 
+  GHDOC.numTasks++;
+  var url = "http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+branch;
   $.ajax({
-      url:"http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+branch,
+      url:url,
       dataType:'jsonp',
       success:function(data){
-
 	// Find .ghdoc file
 	var useghdocfile = false;
 	for(var i in data.tree){
 	  if(data.tree[i].type=="blob" && data.tree[i].name.match(/^\.ghdoc$/)){
 	    useghdocfile = true;
+	    //GHDOC.numTasks++;
 	    that.ghdocfile = new GHDOC.File(user,repos,branch,data.tree[i].name,{success:function(){
 		  // Save found patterns
 		  if(that.ghdocfile.content){
@@ -353,15 +370,29 @@ GHDOC.Tree = function(user,repos,branch,name,success){
 		  // Loop through files
 		  for(var i in data.tree){
 		    if(data.tree[i].type=="blob" && matches(data.tree[i].name)){
-		      that.files.push(new GHDOC.File(user,repos,branch,data.tree[i].name,{success:success}));
+		      //GHDOC.numTasks++;
+		      that.files.push(new GHDOC.File(user,repos,branch,
+						     data.tree[i].name,
+						     {
+						       success:
+						         function(){
+							   /*GHDOC.numTasks--;
+							     GHDOC.update();*/
+							 }
+						     }
+						     ));
 		    }
 		    // @todo sub branch
 		  }
-		  success();
+		  /*GHDOC.numTasks--;
+		    GHDOC.update();*/
 		}
 	      });
 	  }
 	}
+	
+	GHDOC.numTasks--;
+	GHDOC.update();
       }
     });
 };
@@ -408,6 +439,7 @@ GHDOC.ParseMethods = function(src){
       m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
+      m.returnvalue = GHDOC.ParseReturn(blocks[i]);
       result.push(m);
     }
   }
@@ -483,16 +515,19 @@ GHDOC.ParseFunctions = function(src){
   for(i in blocks){
     // functions have "@fn" to define their name
     var functions = blocks[i].match(/\@fn([^@]*)/g);
-    for(j in functions){
-      functions[j] = functions[j]
-	.replace(/[\s]*@fn[\s]*/,"");
-      var s = functions[j];
-      var c = new GHDOC.Function();
-      c.name = s.trim();
-      c.parameters = GHDOC.ParseParameters(blocks[i]);
-      c.brief = GHDOC.ParseBrief(blocks[i]);
-      c.returnvalue = GHDOC.ParseReturn(blocks[i]);
-      result.push(c);
+    var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
+    if(functions && !memberofs){
+      for(j in functions){
+	functions[j] = functions[j]
+	  .replace(/[\s]*@fn[\s]*/,"");
+	var s = functions[j];
+	var c = new GHDOC.Function();
+	c.name = s.trim();
+	c.parameters = GHDOC.ParseParameters(blocks[i]);
+	c.brief = GHDOC.ParseBrief(blocks[i]);
+	c.returnvalue = GHDOC.ParseReturn(blocks[i]);
+	result.push(c);
+      }
     }
   }
 
@@ -551,11 +586,9 @@ GHDOC.ParseReturn = function(src){
   var returns = src.match(/@return([^@]*)/);
   if(returns && returns.length){
     var result = new GHDOC.ReturnValue();
-    var r = returns[j].replace(/[\s]*@return[\s]*/,"").trim();
-    result.type = r.substr(0,r.indexOf(" "));
-    result.name = r.substr(r.indexOf(" "));
-    result.name = result.name.substr(0,result.name.indexOf(" "));
-    result.brief = "";
+    var r = returns[0].replace(/[\s]*@return[\s]*/,"").trim().split(" ");
+    result.type = r.shift();
+    result.brief = r.join(" ");
     return result;
   }
 };
