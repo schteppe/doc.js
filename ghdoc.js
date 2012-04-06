@@ -360,7 +360,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
   // Get file contents
   var that = this;
-  var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename;
+  var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename.replace(/\//,"");
   GHDOC.numTasks++;
   $.ajax({
       url:url,
@@ -423,6 +423,13 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
     return false;
   }
 
+  function matchesdir(filename){
+    for(var i in that.patterns)
+      if(that.patterns[i].length && that.patterns[i].match(filename))
+	return true;
+    return false;
+  }
+
   GHDOC.numTasks++;
   var url = "http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+branch;
   $.ajax({
@@ -445,20 +452,25 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 		  }
 
 		  function accFiles(data,path){
-		    console.log(path);
 		    // Loop through files
 		    for(var j in data.tree){
-		      if(data.tree[j].type=="blob" && matches(path+"/"+data.tree[j].name))
-			that.files.push(new GHDOC.File(user,repos,branch,data.tree[j].name));
-		      else if(data.tree[j].type=="tree" && matches(path+"/"+data.tree[i].name) ){
+		      if(data.tree[j].type=="blob" &&
+			 matches(path+"/"+data.tree[j].name))
+			that.files.push(new GHDOC.File(user,
+						       repos,
+						       branch,
+						       path+"/"+data.tree[j].name));
+		      else if(data.tree[j].type=="tree" &&
+			      matchesdir(path+"/"+data.tree[j].name)){
 			// Subtree
 			GHDOC.numTasks++;
 			var url = "http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+data.tree[j].sha;
+			var dir = data.tree[j].name+"";
 			$.ajax({
 			    url:url,
 			    dataType:'jsonp',
 			    success:function(d){
-			      accFiles(d,path+"/"+data.tree[j].name);
+			      accFiles(d,path+"/"+dir);
 			      GHDOC.numTasks--;
 			      GHDOC.update();
 			    } 
