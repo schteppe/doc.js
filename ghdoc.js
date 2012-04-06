@@ -140,12 +140,12 @@ $(function(){
 	  $details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
 	    .append("<p>"+c.brief+"</p>")
 	    .append("<h3>Public member functions</h3>");
-	  var $methods = $("<ul></ul>").addClass("member_overview");
-	  $methods.append("<li><label class=\"datatype\">&nbsp;</label>" + c.name + " ( " + args.join(" , ") + " )</li>");
+	  var $methods = $("<table></table>").addClass("member_overview");
+	  $methods.append("<tr><td class=\"datatype\">&nbsp;</td><td>" + c.name + " ( " + args.join(" , ") + " )</td></tr>");
 	  for(var k in methods){
 	    var m = methods[k];
 	    if(m.memberof==c.name){
-	      $methods.append("<li><label class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</label>" + m.name + " ( " + " )</li>");
+	      $methods.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " + " )</td></tr>");
 	    }
 	  }
 	  $details.append($methods);
@@ -208,7 +208,7 @@ $(function(){
 	  .text(function(d) { return d.name; });
 
 	// Functions
-	var $ul = $("<ul class=\"function_overview\"></ul>");
+	var $ul = $("<table class=\"function_overview\"></table>");
 	var $details = $("<div></div>");
 	for(var j=0; j<functions.length; j++){
 	  var args = [];
@@ -228,7 +228,7 @@ $(function(){
 	    $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
 	  }
 
-	  $class = $("<li><label class=\"datatype\" for=\""+f.name+"\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</label><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</li>");
+	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
 	  $ul.append($class);
 	}
 	$("#functions")
@@ -402,6 +402,7 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
  * @author schteppe
  * @brief Parse documentation blocks.
  * @param string src Source code to parse.
+ * @return array
  */
 GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
