@@ -415,7 +415,8 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 
   function matches(filename){
     for(var i in that.patterns)
-      if(that.patterns[i].length && filename.match(that.patterns[i])) return true;
+      if(that.patterns[i].length && filename.match(that.patterns[i]))
+	return true;
     return false;
   }
 
@@ -425,12 +426,11 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
       url:url,
       dataType:'jsonp',
       success:function(data){
-	// Find .ghdoc file
+	// Find .ghdoc file, it is assumed to exist
 	var useghdocfile = false;
 	for(var i in data.tree){
 	  if(data.tree[i].type=="blob" && data.tree[i].name.match(/^\.ghdoc$/)){
 	    useghdocfile = true;
-	    //GHDOC.numTasks++;
 	    that.ghdocfile = new GHDOC.File(user,repos,branch,data.tree[i].name,{success:function(){
 		  // Save found patterns
 		  if(that.ghdocfile.content){
@@ -441,25 +441,31 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 		    }
 		  }
 
-		  // Loop through files
-		  for(var i in data.tree){
-		    if(data.tree[i].type=="blob" && matches(data.tree[i].name)){
-		      //GHDOC.numTasks++;
-		      that.files.push(new GHDOC.File(user,repos,branch,
-						     data.tree[i].name,
-						     {
-						       success:
-						         function(){
-							   /*GHDOC.numTasks--;
-							     GHDOC.update();*/
-							 }
-						     }
-						     ));
+		  function accFiles(data,path){
+		    console.log(path);
+		    // Loop through files
+		    for(var j in data.tree){
+		      if(data.tree[j].type=="blob" && matches(path+"/"+data.tree[j].name))
+			that.files.push(new GHDOC.File(user,repos,branch,data.tree[j].name));
+		      else if(data.tree[j].type=="tree" && matches(path+"/"+data.tree[i].name) ){
+			// Subtree
+			GHDOC.numTasks++;
+			var url = "http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+data.tree[j].sha;
+			$.ajax({
+			    url:url,
+			    dataType:'jsonp',
+			    success:function(d){
+			      accFiles(d,path+"/"+data.tree[j].name);
+			      GHDOC.numTasks--;
+			      GHDOC.update();
+			    } 
+			  });
+		      }
 		    }
-		    // @todo sub branch
 		  }
-		  /*GHDOC.numTasks--;
-		    GHDOC.update();*/
+
+		  accFiles(data,"");
+
 		}
 	      });
 	  }
