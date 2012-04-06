@@ -133,7 +133,7 @@ $(function(){
 	  .append($ul);
 
 	// Classes
-	var $ul = $("<ul class=\"class_overview\"></ul>");
+	var $ul = $("<table class=\"class_overview\"></table>");
 	var $details = $("<div></div>");
 	for(var j=0; j<classes.length; j++){
 	  var args = [], c = classes[j];
@@ -158,7 +158,7 @@ $(function(){
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
-	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td></tr>");
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td>" + p.brief + "</td></tr>");
 	      np++;
 	    }
 	  }
@@ -172,7 +172,7 @@ $(function(){
 	      .append($properties);
 	  }
 
-	  $class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
+	  $class = $("<tr><td><a href=\"#"+c.name+"\">"+sign+"</a></td></tr>");
 	  $ul.append($class);
 	}
 	$("#classes")
@@ -246,10 +246,12 @@ $(function(){
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
+	  $params = $("<table></table>");
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    $details.append("<h4>"+(p.type ? "<span class=\"datatype\">"+p.type+ "</span>" : "")+ " " + p.name+"</h4><p>"+p.brief+"</p>");
+	    $params.append("<tr><th><span class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+ "</span> <span class=\"param\">" + p.name+"</span></th><td>"+p.brief+"</td></tr>");
 	  }
+	  $details.append($params);
 
 	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
 	  $ul.append($class);
@@ -258,6 +260,7 @@ $(function(){
 	  .html("<h1>Functions</h1>")
 	  .append($ul)
 	  .append($details);
+	$("table").addClass("ui-tabs ui-widget ui-widget-content ui-corner-all");
       }
     }
     GHDOC.update = update;
@@ -357,7 +360,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
   // Get file contents
   var that = this;
-  var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename;
+  var url = "https://github.com/api/v2/json/blob/show/"+user+"/"+repos+"/"+branch+"/"+filename.replace(/\//,"");
   GHDOC.numTasks++;
   $.ajax({
       url:url,
@@ -415,7 +418,15 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 
   function matches(filename){
     for(var i in that.patterns)
-      if(that.patterns[i].length && filename.match(that.patterns[i])) return true;
+      if(that.patterns[i].length && filename.match(that.patterns[i]))
+	return true;
+    return false;
+  }
+
+  function matchesdir(filename){
+    for(var i in that.patterns)
+      if(that.patterns[i].length && that.patterns[i].match(filename))
+	return true;
     return false;
   }
 
@@ -425,12 +436,11 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
       url:url,
       dataType:'jsonp',
       success:function(data){
-	// Find .ghdoc file
+	// Find .ghdoc file, it is assumed to exist
 	var useghdocfile = false;
 	for(var i in data.tree){
 	  if(data.tree[i].type=="blob" && data.tree[i].name.match(/^\.ghdoc$/)){
 	    useghdocfile = true;
-	    //GHDOC.numTasks++;
 	    that.ghdocfile = new GHDOC.File(user,repos,branch,data.tree[i].name,{success:function(){
 		  // Save found patterns
 		  if(that.ghdocfile.content){
@@ -441,25 +451,36 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 		    }
 		  }
 
-		  // Loop through files
-		  for(var i in data.tree){
-		    if(data.tree[i].type=="blob" && matches(data.tree[i].name)){
-		      //GHDOC.numTasks++;
-		      that.files.push(new GHDOC.File(user,repos,branch,
-						     data.tree[i].name,
-						     {
-						       success:
-						         function(){
-							   /*GHDOC.numTasks--;
-							     GHDOC.update();*/
-							 }
-						     }
-						     ));
+		  function accFiles(data,path){
+		    // Loop through files
+		    for(var j in data.tree){
+		      if(data.tree[j].type=="blob" &&
+			 matches(path+"/"+data.tree[j].name))
+			that.files.push(new GHDOC.File(user,
+						       repos,
+						       branch,
+						       path+"/"+data.tree[j].name));
+		      else if(data.tree[j].type=="tree" &&
+			      matchesdir(path+"/"+data.tree[j].name)){
+			// Subtree
+			GHDOC.numTasks++;
+			var url = "http://github.com/api/v2/json/tree/show/"+user+"/"+repos+"/"+data.tree[j].sha;
+			var dir = data.tree[j].name+"";
+			$.ajax({
+			    url:url,
+			    dataType:'jsonp',
+			    success:function(d){
+			      accFiles(d,path+"/"+dir);
+			      GHDOC.numTasks--;
+			      GHDOC.update();
+			    } 
+			  });
+		      }
 		    }
-		    // @todo sub branch
 		  }
-		  /*GHDOC.numTasks--;
-		    GHDOC.update();*/
+
+		  accFiles(data,"");
+
 		}
 	      });
 	  }
