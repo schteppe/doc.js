@@ -123,9 +123,11 @@ $(function(){
 	    .append(mainpage.toHTML());
 
 	// Files
-	var $ul = $("<ul></ul>");
+	var $ul = $("<p>No files found :(</p>");
 	for(var i=0; i<files.length; i++){
 	  var f = files[i];
+	  if(i==0)
+	    $ul = $("<ul></ul>");
 	  $ul.append("<li><a href=\"https://github.com/"+username+"/"+repository+"/blob/"+branchname+"/"+f.name+"\">"+f.name+"</a> "+f.brief+"</li>");
 	}
 	$("#files")
@@ -133,7 +135,7 @@ $(function(){
 	  .append($ul);
 
 	// Classes
-	var $ul = $("<table class=\"class_overview\"></table>");
+	var $ul = $("<p>No classes found :(</p>");
 	var $details = $("<div></div>");
 	for(var j=0; j<classes.length; j++){
 	  var args = [], c = classes[j];
@@ -173,6 +175,8 @@ $(function(){
 	  }
 
 	  $class = $("<tr><td><a href=\"#"+c.name+"\">"+sign+"</a></td></tr>");
+	  if(j==0)
+	    $ul = $("<table class=\"class_overview\"></table>");
 	  $ul.append($class);
 	}
 	$("#classes")
@@ -231,7 +235,7 @@ $(function(){
 	  .text(function(d) { return d.name; });
 
 	// Functions
-	var $ul = $("<table class=\"function_overview\"></table>");
+	var $ul = $("<p>No functions found :(</p>");
 	var $details = $("<div></div>");
 	for(var j=0; j<functions.length; j++){
 	  var args = [];
@@ -254,6 +258,8 @@ $(function(){
 	  $details.append($params);
 
 	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
+	  if(j==0)
+	    $ul = $("<table class=\"function_overview\"></table>");
 	  $ul.append($class);
 	}
 	$("#functions")
