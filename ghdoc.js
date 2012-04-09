@@ -117,10 +117,12 @@ $(function(){
 	  $("#overview")
 	    .html("<h1>Main page</h1>")
 	    .append("<p>This page is not written yet. Carry on!</p>");
-	else
+	else {
 	  $("#overview")
 	    .html("<h1>"+mainpage.name+"</h1>")
 	    .append(mainpage.toHTML());
+	  $("head title").html(mainpage.name + " - GHDoc");
+	}
 
 	// Files
 	var $ul = $("<p>No files found :(</p>");
