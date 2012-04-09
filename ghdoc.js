@@ -164,7 +164,7 @@ $(function(){
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
-	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td>" + p.brief + "</td><td class=\"desc\">"+p.brief+"</td></tr>");
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
 	      np++;
 	    }
 	  }
@@ -697,7 +697,7 @@ GHDOC.ParseProperties = function(src){
       property.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       property.type = s.shift().trim();
       property.name = s.shift().trim();
-      property.brief = s.join(" ").trim();
+      property.brief = GHDOC.ParseBrief(blocks[i]);
       result.push(property);
     }
   }
