@@ -117,10 +117,12 @@ $(function(){
 	  $("#overview")
 	    .html("<h1>Main page</h1>")
 	    .append("<p>This page is not written yet. Carry on!</p>");
-	else
+	else {
 	  $("#overview")
 	    .html("<h1>"+mainpage.name+"</h1>")
 	    .append(mainpage.toHTML());
+	  $("head title").html(mainpage.name + " - GHDoc");
+	}
 
 	// Files
 	var $ul = $("<p>No files found :(</p>");
@@ -563,8 +565,9 @@ GHDOC.ParsePages = function(src){
     var pages = blocks[i].match(/\@(page|mainpage)([^@]*)/g);
     if(pages && pages.length>=1){
       var p = pages[0].match("main") ? new GHDOC.MainPage() : new GHDOC.Page();
-      p.name = pages[0].replace(/[\s]*@(page|mainpage)[\s]*/,"").trim();
-      p.content = blocks[i].replace(/[\s]*@(page|mainpage)[\s]*.*/,"").trim();
+      p.name = "Main page";
+      blocks[i].replace(/\@(page|mainpage)[\s]*(.*)/,function(m,$1,$2){ p.name = $2.trim(); return m; });
+      p.content = blocks[i].replace(/[\s]*@(page|mainpage).*/,"").trim();
       result.push(p);
     }
   }
