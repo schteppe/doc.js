@@ -508,7 +508,7 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 GHDOC.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
   // (.(?!\*\/))* is negative lookahead, anything not followed by */
-  var blocks = src.match(/^[\s\t]*\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];//match(/\/\*\*([.\n\s\t\r\w*\@:\.\?\!\-_\d#]*)\*\//gm) || [];
+  var blocks = src.match(/[\s\t]*\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];//match(/\/\*\*([.\n\s\t\r\w*\@:\.\?\!\-_\d#]*)\*\//gm) || [];
   for(i in blocks){
     // trim
     blocks[i] = blocks[i]
@@ -651,8 +651,13 @@ GHDOC.ParseParameters = function(src){
       .replace(/[\s]*@param[\s]*/,"");
     var s = params[j].split(" ",2);
     var param = new GHDOC.Parameter();
-    param.type = s[0].trim();
-    param.name = s[1].trim();
+    if(s.length==2){
+      param.type = s[0].trim();
+      param.name = s[1].trim();
+    } else if(s.length==1){
+      param.type = "";
+      param.name = s[0].trim();
+    }
     param.brief = params[j].replace(s[0],"").replace(s[1],"").trim();
     result.push(param);
   }
