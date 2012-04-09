@@ -154,7 +154,9 @@ $(function(){
 	  for(var k in methods){
 	    var m = methods[k];
 	    if(m.memberof==c.name){
-	      $methods.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " + " )</td></tr>");
+	      $methods
+		.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " + " )</td></tr>")
+		.append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
 	    }
 	  }
 
@@ -162,7 +164,7 @@ $(function(){
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
-	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td>" + p.brief + "</td></tr>");
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td>" + p.brief + "</td><td class=\"desc\">"+p.brief+"</td></tr>");
 	      np++;
 	    }
 	  }
@@ -320,18 +322,21 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
   /**
    * @property string name
+   * @brief The file name
    * @memberof GHDOC.File
    */
   this.name = filename;
 
   /**
    * @property array classes
+   * @brief Classes found in the file
    * @memberof GHDOC.File
    */
   this.classes = [];
 
   /**
    * @property array methods
+   * @brief Methods found in the file
    * @memberof GHDOC.File
    */
   this.methods = [];
@@ -543,6 +548,7 @@ GHDOC.ParseMethods = function(src){
       m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
       m.parameters = GHDOC.ParseParameters(blocks[i]);
+      m.brief = GHDOC.ParseBrief(blocks[i]);
       m.returnvalue = GHDOC.ParseReturn(blocks[i]);
       result.push(m);
     }
