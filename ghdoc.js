@@ -178,7 +178,7 @@ $(function(){
 	      .append($properties);
 	  }
 
-	  $class = $("<tr><td><a href=\"#"+c.name+"\">"+sign+"</a></td></tr>");
+	  $class = $("<tr><td><a href=\"#"+c.name+"\">"+sign+"</a></td><td class=\"brief\">"+c.brief+"</td></tr>");
 	  if(j==0)
 	    $ul = $("<table class=\"class_overview\"></table>");
 	  $ul.append($class);
@@ -304,6 +304,7 @@ GHDOC.numTasks = 0;
 
 /**
  * @class GHDOC.File
+ * @brief A file
  * @author schteppe
  * @param string user
  * @param string repos
@@ -343,12 +344,14 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
   /**
    * @property array functions
+   * @brief Functions found in the file
    * @memberof GHDOC.File
    */
   this.functions = [];
 
   /**
    * @property array pages
+   * @brief Pages found in the file
    * @memberof GHDOC.File
    */
   this.pages = [];
@@ -394,6 +397,7 @@ GHDOC.File = function(user,repos,branch,filename,options){
 
 /**
  * @class GHDOC.Tree
+ * @brief A collection of parsed files
  * @author schteppe
  * @param string user
  * @param string repos
@@ -405,7 +409,9 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
   filesuccess = filesuccess || function(){};
 
   /**
+   * @private
    * @property array patterns
+   * @brief Patterns that were parsed from the .ghdoc file
    * @memberof GHDOC.Tree
    */
   this.patterns = [];
@@ -418,6 +424,7 @@ GHDOC.Tree = function(user,repos,branch,name,success,filesuccess){
 
   /**
    * @property string name
+   * @brief Branch name
    * @memberof GHDOC.Tree
    */
   this.name = name || "Untitled branch";
@@ -746,10 +753,35 @@ GHDOC.ParseReturn = function(src){
  * @brief A representation of a class.
  */
 GHDOC.Class = function(){
+
+  /**
+   * @property GHDOC.Class parent
+   * @memberof GHDOC.Class
+   */
   this.parent = null;
+
+  /**
+   * @property array methods
+   * @memberof GHDOC.Class
+   */
   this.methods = [];
+
+  /**
+   * @property array properties
+   * @memberof GHDOC.Class
+   */
   this.properties = [];
+
+  /**
+   * @property array parameters
+   * @memberof GHDOC.Class
+   */
   this.parameters = []; // for constructor
+
+  /**
+   * @property string brief
+   * @memberof GHDOC.Class
+   */
   this.brief = "";
 };
 
@@ -759,10 +791,35 @@ GHDOC.Class = function(){
  * @class GHDOC.Function
  */
 GHDOC.Function = function(){
+
+  /**
+   * @property string name
+   * @memberof GHDOC.Function
+   */
   this.name = "(untitled function)";
+
+  /**
+   * @property string brief
+   * @memberof GHDOC.Function
+   */
   this.brief = "";
+
+  /**
+   * @property string description
+   * @memberof GHDOC.Function
+   */
   this.description = "";
+
+  /**
+   * @property array parameters
+   * @memberof GHDOC.Function
+   */
   this.parameters = [];
+
+  /**
+   * @property GHDOC.ReturnValue returnvalue
+   * @memberof GHDOC.Function
+   */
   this.returnvalue = null;
 };
 
@@ -773,7 +830,13 @@ GHDOC.Function = function(){
  * @extends GHDOC.Function
  */
 GHDOC.Method = function(){
+
+  /**
+   * @property string memberof
+   * @memberof GHDOC.Method
+   */
   this.memberof = "";
+
   GHDOC.Function.call( this );
 };
 GHDOC.Method.prototype = new GHDOC.Function();
@@ -784,8 +847,23 @@ GHDOC.Method.prototype = new GHDOC.Function();
  * @class GHDOC.Property
  */
 GHDOC.Property = function(){
+
+  /**
+   * @property string type
+   * @memberof GHDOC.Property
+   */
   this.type = "";
+
+  /**
+   * @property string name
+   * @memberof GHDOC.Property
+   */
   this.name = "";
+
+  /**
+   * @property string brief
+   * @memberof GHDOC.Property
+   */
   this.brief = "";
 };
 
@@ -795,7 +873,17 @@ GHDOC.Property = function(){
  * @class GHDOC.Page
  */
 GHDOC.Page = function(){
+
+  /**
+   * @property string name
+   * @memberof GHDOC.Page
+   */
   this.name = "";
+
+  /**
+   * @property string content
+   * @memberof GHDOC.Page
+   */
   this.content = "";
 };
 /**
@@ -828,8 +916,23 @@ GHDOC.MainPage.prototype = new GHDOC.Page();
  * @author schteppe
  */
 GHDOC.Variable = function(){
+
+  /**
+   * @property string type
+   * @memberof GHDOC.Variable
+   */
   this.type = "";
+
+  /**
+   * @property string name
+   * @memberof GHDOC.Variable
+   */
   this.name = "";
+
+  /**
+   * @property string brief
+   * @memberof GHDOC.Variable
+   */
   this.brief = "";
 };
 
