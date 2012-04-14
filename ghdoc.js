@@ -154,9 +154,17 @@ $(function(){
 	  for(var k in methods){
 	    var m = methods[k];
 	    if(m.memberof==c.name){
+
+	      var margs = [];
+	      for(var k in m.parameters)
+		margs.push("<span class=\"datatype\">"+m.parameters[k].type+"</span>" + " " + m.parameters[k].name);
+
 	      $methods
-		.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " + " )</td></tr>")
+		.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
 		.append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
+
+	      if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
+		$methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
 	    }
 	  }
 
