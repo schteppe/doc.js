@@ -71,7 +71,7 @@ $(function(){
     function update(){
       if(GHDOC.numTasks==0){
 	// put all entities from all files in arrays
-	var mainpage, pages=[], files=[], classes=[], functions=[], methods=[], properties=[];
+	var mainpage, pages=[], files=[], classes=[], functions=[], methods=[], properties=[], name2class={};
 	for(var i=0; i<branches[0].files.length; i++){
 	  var f = branches[0].files[i];
 	  // Add file
@@ -86,8 +86,10 @@ $(function(){
 	  }
 
 	  // Add classes
-	  for(var j in f.classes)
+	  for(var j in f.classes){
 	    classes.push(f.classes[j]);
+	    name2class[f.classes[j].name] = f.classes[j];
+	  }
 
 	  // Add methods
 	  for(var j in f.methods)
@@ -111,6 +113,13 @@ $(function(){
 	pages.sort(sortbyname);
 	classes.sort(sortbyname);
 	functions.sort(sortbyname);
+
+	function datatype2link(name){
+	  if(name2class[name])
+	    return "<a href=\"#"+name+"\">"+name+"</a>";
+	  else
+	    return name;
+	}
 
 	// Main page
 	if(!mainpage)
@@ -142,7 +151,7 @@ $(function(){
 	for(var j=0; j<classes.length; j++){
 	  var args = [], c = classes[j];
 	  for(var k in c.parameters){
-	    args.push("<span class=\"datatype\">"+c.parameters[k].type+"</span>" + " " + c.parameters[k].name);
+	    args.push("<span class=\"datatype\">"+datatype2link(c.parameters[k].type)+"</span>" + " " + c.parameters[k].name);
 	  }
 	  var sign = c.name;
 	  $details.append("<h2 id=\""+c.name+"\">"+c.name+"</h2>")
@@ -157,10 +166,10 @@ $(function(){
 
 	      var margs = [];
 	      for(var k in m.parameters)
-		margs.push("<span class=\"datatype\">"+m.parameters[k].type+"</span>" + " " + m.parameters[k].name);
+		margs.push("<span class=\"datatype\">"+datatype2link(m.parameters[k].type)+"</span>" + " " + m.parameters[k].name);
 
 	      $methods
-		.append("<tr><td class=\"datatype\">"+(m.returnvalue ? m.returnvalue.type : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
+		.append("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
 		.append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
 
 	      if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
@@ -172,7 +181,7 @@ $(function(){
 	  for(var k in properties){
 	    var p = properties[k];
 	    if(p.memberof==c.name){
-	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
+	      $properties.append("<tr><td class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
 	      np++;
 	    }
 	  }
@@ -256,20 +265,20 @@ $(function(){
 	  // Construct signature
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    args.push("<span class=\"datatype\">"+p.type+ "</span> " + p.name);
+	    args.push("<span class=\"datatype\">"+datatype2link(p.type)+ "</span> " + p.name);
 	  }
-	  $details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? f.returnvalue.type : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
+	  $details.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? datatype2link(f.returnvalue.type) : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
 	    .append("<p>"+f.brief+"</p>");
 
 	  // Parameter details
 	  $params = $("<table></table>");
 	  for(var k in f.parameters){
 	    var p = f.parameters[k];
-	    $params.append("<tr><th><span class=\"datatype\">"+(p.type ? p.type : "&nbsp;")+ "</span> <span class=\"param\">" + p.name+"</span></th><td>"+p.brief+"</td></tr>");
+	    $params.append("<tr><th><span class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+ "</span> <span class=\"param\">" + p.name+"</span></th><td>"+p.brief+"</td></tr>");
 	  }
 	  $details.append($params);
 
-	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? f.returnvalue.type : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
+	  $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? datatype2link(f.returnvalue.type) : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
 	  if(j==0)
 	    $ul = $("<table class=\"function_overview\"></table>");
 	  $ul.append($class);
