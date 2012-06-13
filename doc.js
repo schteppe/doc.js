@@ -1,44 +1,44 @@
 /**
- * @file ghdoc.js
+ * @file doc.js
  * @brief Main JavaScript file
  */
 
 /**
- * @mainpage GHDoc
+ * @mainpage About
  *
- * @section intro_sec What is GHDoc?
- * GHDoc is a web based on-the-fly documentation generator.
+ * @section intro_sec What is Doc.js?
+ * Doc.js is a web based on-the-fly documentation generator.
  * 
  * @section install_sec Usage
  * 
  * @subsection step1 Step 1: Document your code
- * Using GHDoc comment blocks.
+ * Using Doc.js comment blocks.
  * 
  * @subsection step1 Step 2: Create an HTML file
- * Create an HTML file that imports ghdoc.js and runs GHDOC.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
+ * Create an HTML file that imports doc.js and runs DOCJS.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
  *
  * @subsection step1 Step 3: Done
  * Open your HTML file in your browser and view the result.
  *
  * @section contrib_sec Contribute
- * If you like this software, help making it better. Fork the code on https://github.com/schteppe/ghdoc
+ * If you like this software, help making it better. Fork the code on https://github.com/schteppe/doc.js
  *
  */
 
-var GHDOC = {};
+var DOCJS = {};
 
-GHDOC.Generate = function(urls,opt){
+DOCJS.Generate = function(urls,opt){
     $("body").append("<article>\
       <nav></nav>\
       <footer>\
-	<a href=\"http://github.com/schteppe/ghdoc\">github.com/schteppe/ghdoc</a>\
+	<a href=\"http://github.com/schteppe/doc.js\">github.com/schteppe/doc.js</a>\
       </footer>\
     </article>");
 
     opt = opt || {};
     var options = {
 	title:"Hello World!",
-	description:"My first GHDoc documentation"
+	description:"My first Doc.js documentation"
     };
     $.extend(options,opt);
 
@@ -71,7 +71,7 @@ GHDOC.Generate = function(urls,opt){
 	
 	// Check for main page
 	for(var i in pages){
-	    if(pages[i] instanceof GHDOC.MainPage){
+	    if(pages[i] instanceof DOCJS.MainPage){
 		mainpage = pages[i];
 		pages.splice(i,1);
 	    }
@@ -218,7 +218,7 @@ GHDOC.Generate = function(urls,opt){
 	}
 	
     }
-    GHDOC.update = update;
+    DOCJS.update = update;
     
     // Get the files
     for(var i=0; i<urls.length; i++){
@@ -226,11 +226,11 @@ GHDOC.Generate = function(urls,opt){
 	    url:urls[i],
 	    dataType:'text',
 	    success:function(data){
-		functions = functions.concat(GHDOC.ParseFunctions(data));
-		methods = methods.concat(GHDOC.ParseMethods(data));
-		classes = classes.concat(GHDOC.ParseClasses(data));
-		properties = properties.concat(GHDOC.ParseProperties(data));
-		pages = pages.concat(GHDOC.ParsePages(data));
+		functions = functions.concat(DOCJS.ParseFunctions(data));
+		methods = methods.concat(DOCJS.ParseMethods(data));
+		classes = classes.concat(DOCJS.ParseClasses(data));
+		properties = properties.concat(DOCJS.ParseProperties(data));
+		pages = pages.concat(DOCJS.ParsePages(data));
 		update();
 	    }
 	});
@@ -238,7 +238,7 @@ GHDOC.Generate = function(urls,opt){
 };
 
 /**
- * @class GHDOC.File
+ * @class DOCJS.File
  * @brief A file
  * @author schteppe
  * @param string user
@@ -247,7 +247,7 @@ GHDOC.Generate = function(urls,opt){
  * @param string filename
  * @param array options
  */
-GHDOC.File = function(filename,content,options){
+DOCJS.File = function(filename,content,options){
   // Extend options
   options = options || {};
   var opt = {
@@ -259,71 +259,71 @@ GHDOC.File = function(filename,content,options){
   /**
    * @property string name
    * @brief The file name
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.name = filename;
 
   /**
    * @property array classes
    * @brief Classes found in the file
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.classes = [];
 
   /**
    * @property array methods
    * @brief Methods found in the file
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.methods = [];
 
   /**
    * @property array functions
    * @brief Functions found in the file
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.functions = [];
 
   /**
    * @property array pages
    * @brief Pages found in the file
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.pages = [];
 
   /**
    * @property array properties
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.properties = [];
 
   /**
    * @property string content
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.content = null;
 
   /**
    * @property string brief
-   * @memberof GHDOC.File
+   * @memberof DOCJS.File
    */
   this.brief = "";
 
     // Get file contents
     /*
     opt.success();
-    GHDOC.update();
+    DOCJS.update();
     */
 };
 
 /**
- * @fn GHDOC.ParseBlocks
+ * @fn DOCJS.ParseBlocks
  * @author schteppe
  * @brief Parse documentation blocks.
  * @param string src Source code to parse.
  * @return array
  */
-GHDOC.ParseBlocks = function(src){
+DOCJS.ParseBlocks = function(src){
   // Get doc blocks a la doxygen
   // (.(?!\*\/))* is negative lookahead, anything not followed by */
   var blocks = src.match(/[\s\t]*\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];//match(/\/\*\*([.\n\s\t\r\w*\@:\.\?\!\-_\d#]*)\*\//gm) || [];
@@ -341,26 +341,26 @@ GHDOC.ParseBlocks = function(src){
 };
 
 /**
- * @fn GHDOC.ParseMethods
+ * @fn DOCJS.ParseMethods
  * @author schteppe
  * @param string src
- * @return array An array of parsed GHDOC.Method objects
+ * @return array An array of parsed DOCJS.Method objects
  */
-GHDOC.ParseMethods = function(src){
+DOCJS.ParseMethods = function(src){
   var result = [];
   // Get doc blocks a la doxygen
-  var blocks = GHDOC.ParseBlocks(src);
+  var blocks = DOCJS.ParseBlocks(src);
   for(i in blocks){
     // Methods have "@memberof" tags to reference their class AND a "@fn" tag for their name
     var fns = blocks[i].match(/\@fn([^@]*)/g);
     var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
     if(memberofs && memberofs.length>=1 && fns && fns.length>=1){
-      var m = new GHDOC.Method();
+      var m = new DOCJS.Method();
       m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
-      m.parameters = GHDOC.ParseParameters(blocks[i]);
-      m.brief = GHDOC.ParseBrief(blocks[i]);
-      m.returnvalue = GHDOC.ParseReturn(blocks[i]);
+      m.parameters = DOCJS.ParseParameters(blocks[i]);
+      m.brief = DOCJS.ParseBrief(blocks[i]);
+      m.returnvalue = DOCJS.ParseReturn(blocks[i]);
       result.push(m);
     }
   }
@@ -368,20 +368,20 @@ GHDOC.ParseMethods = function(src){
 };
 
 /**
- * @fn GHDOC.ParsePages
+ * @fn DOCJS.ParsePages
  * @author schteppe
  * @param string src
- * @return array An array of parsed GHDOC.Page objects
+ * @return array An array of parsed DOCJS.Page objects
  */
-GHDOC.ParsePages = function(src){
+DOCJS.ParsePages = function(src){
   var result = [];
   // Get doc blocks a la doxygen
-  var blocks = GHDOC.ParseBlocks(src);
+  var blocks = DOCJS.ParseBlocks(src);
   for(i in blocks){
     // Pages got the @page command
     var pages = blocks[i].match(/\@(page|mainpage)([^@]*)/g);
     if(pages && pages.length>=1){
-      var p = pages[0].match("main") ? new GHDOC.MainPage() : new GHDOC.Page();
+      var p = pages[0].match("main") ? new DOCJS.MainPage() : new DOCJS.Page();
       p.name = "Main page";
       blocks[i].replace(/\@(page|mainpage)[\s]*(.*)/,function(m,$1,$2){ p.name = $2.trim(); return m; });
       p.content = blocks[i].replace(/[\s]*@(page|mainpage).*/,"").trim();
@@ -392,18 +392,18 @@ GHDOC.ParsePages = function(src){
 };
 
 /**
- * @fn GHDOC.ParseClasses
+ * @fn DOCJS.ParseClasses
  * @author schteppe
  * @brief Parse source code.
  * @param string src
  * @return array An array of parsed objects
  */
-GHDOC.ParseClasses = function(src){
+DOCJS.ParseClasses = function(src){
 
   var result = [];
 
   // Get doc blocks a la doxygen
-  var blocks = GHDOC.ParseBlocks(src);
+  var blocks = DOCJS.ParseBlocks(src);
   for(i in blocks){
 
     // Classes have "@class" to define their name
@@ -412,10 +412,10 @@ GHDOC.ParseClasses = function(src){
       classes[j] = classes[j]
 	.replace(/[\s]*@class[\s]*/,"");
       var s = classes[j];
-      var c = new GHDOC.Class();
+      var c = new DOCJS.Class();
       c.name = s.trim();
-      c.parameters = GHDOC.ParseParameters(blocks[i]);
-      c.brief = GHDOC.ParseBrief(blocks[i]);
+      c.parameters = DOCJS.ParseParameters(blocks[i]);
+      c.brief = DOCJS.ParseBrief(blocks[i]);
       result.push(c);
     }
   }
@@ -423,17 +423,17 @@ GHDOC.ParseClasses = function(src){
 };
 
 /**
- * @fn GHDOC.ParseFunctions
+ * @fn DOCJS.ParseFunctions
  * @author schteppe
  * @param string src
  * @return array An array of parsed objects
  */
-GHDOC.ParseFunctions = function(src){
+DOCJS.ParseFunctions = function(src){
 
   var result = [];
 
   // Get doc blocks a la doxygen
-  var blocks = GHDOC.ParseBlocks(src);
+  var blocks = DOCJS.ParseBlocks(src);
   for(i in blocks){
     // functions have "@fn" to define their name
     var functions = blocks[i].match(/\@fn([^@]*)/g);
@@ -443,11 +443,11 @@ GHDOC.ParseFunctions = function(src){
 	functions[j] = functions[j]
 	  .replace(/[\s]*@fn[\s]*/,"");
 	var s = functions[j];
-	var c = new GHDOC.Function();
+	var c = new DOCJS.Function();
 	c.name = s.trim();
-	c.parameters = GHDOC.ParseParameters(blocks[i]);
-	c.brief = GHDOC.ParseBrief(blocks[i]);
-	c.returnvalue = GHDOC.ParseReturn(blocks[i]);
+	c.parameters = DOCJS.ParseParameters(blocks[i]);
+	c.brief = DOCJS.ParseBrief(blocks[i]);
+	c.returnvalue = DOCJS.ParseReturn(blocks[i]);
 	result.push(c);
       }
     }
@@ -457,20 +457,20 @@ GHDOC.ParseFunctions = function(src){
 };
 
 /**
- * @fn GHDOC.ParseParameters
+ * @fn DOCJS.ParseParameters
  * @author schteppe
  * @brief Parses parameter data from a string.
  * @param string src Source code to parse from.
- * @return array An array of GHDOC.Parameter objects
+ * @return array An array of DOCJS.Parameter objects
  */
-GHDOC.ParseParameters = function(src){
+DOCJS.ParseParameters = function(src){
   var result = [],
   params = src.match(/@param([^@]*)/g);
   for(j in params){
     params[j] = params[j]
       .replace(/[\s]*@param[\s]*/,"");
     var s = params[j].split(" ",2);
-    var param = new GHDOC.Parameter();
+    var param = new DOCJS.Parameter();
     if(s.length==2){
       param.type = s[0].trim();
       param.name = s[1].trim();
@@ -485,15 +485,15 @@ GHDOC.ParseParameters = function(src){
 };
 
 /**
- * @fn GHDOC.ParseProperties
+ * @fn DOCJS.ParseProperties
  * @author schteppe
  * @param string src Source code to parse from.
- * @return array An array of GHDOC.Property objects
+ * @return array An array of DOCJS.Property objects
  */
-GHDOC.ParseProperties = function(src){
+DOCJS.ParseProperties = function(src){
   var result = [];
 
-  var blocks = GHDOC.ParseBlocks(src);
+  var blocks = DOCJS.ParseBlocks(src);
   for(i in blocks){
     // Properties have @property and @memberof commands
     var properties = blocks[i].match(/\@property([^\n])*/),
@@ -504,11 +504,11 @@ GHDOC.ParseProperties = function(src){
       var s = properties[0].split(" ");
       if(s.length<2)
 	throw "@param needs two parameters, type and name";
-      var property = new GHDOC.Property();
+      var property = new DOCJS.Property();
       property.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       property.type = s.shift().trim();
       property.name = s.shift().trim();
-      property.brief = GHDOC.ParseBrief(blocks[i]);
+      property.brief = DOCJS.ParseBrief(blocks[i]);
       result.push(property);
     }
   }
@@ -516,13 +516,13 @@ GHDOC.ParseProperties = function(src){
 };
 
 /**
- * @fn GHDOC.ParseBrief
+ * @fn DOCJS.ParseBrief
  * @author schteppe
  * @brief Parses brief information from a code block
  * @param string src
  * @return string Brief description
  */
-GHDOC.ParseBrief = function(src){
+DOCJS.ParseBrief = function(src){
   var result = "",
   briefs = src.match(/@brief([^@]*)/g);
   for(j in briefs){
@@ -534,16 +534,16 @@ GHDOC.ParseBrief = function(src){
 };
 
 /**
- * @fn GHDOC.ParseReturn
+ * @fn DOCJS.ParseReturn
  * @author schteppe
  * @brief Parses the information about the return value
  * @param string src
- * @return GHDOC.ReturnValue
+ * @return DOCJS.ReturnValue
  */
-GHDOC.ParseReturn = function(src){
+DOCJS.ParseReturn = function(src){
   var returns = src.match(/@return([^@]*)/);
   if(returns && returns.length){
-    var result = new GHDOC.ReturnValue();
+    var result = new DOCJS.ReturnValue();
     var r = returns[0].replace(/[\s]*@return[\s]*/,"").trim().split(" ");
     result.type = r.shift();
     result.brief = r.join(" ");
@@ -552,39 +552,39 @@ GHDOC.ParseReturn = function(src){
 };
 
 /**
- * @class GHDOC.Class
+ * @class DOCJS.Class
  * @author schteppe
  * @brief A representation of a class.
  */
-GHDOC.Class = function(){
+DOCJS.Class = function(){
 
   /**
-   * @property GHDOC.Class parent
-   * @memberof GHDOC.Class
+   * @property DOCJS.Class parent
+   * @memberof DOCJS.Class
    */
   this.parent = null;
 
   /**
    * @property array methods
-   * @memberof GHDOC.Class
+   * @memberof DOCJS.Class
    */
   this.methods = [];
 
   /**
    * @property array properties
-   * @memberof GHDOC.Class
+   * @memberof DOCJS.Class
    */
   this.properties = [];
 
   /**
    * @property array parameters
-   * @memberof GHDOC.Class
+   * @memberof DOCJS.Class
    */
   this.parameters = []; // for constructor
 
   /**
    * @property string brief
-   * @memberof GHDOC.Class
+   * @memberof DOCJS.Class
    */
   this.brief = "";
 };
@@ -592,37 +592,37 @@ GHDOC.Class = function(){
 /**
  * @brief A representation of a function
  * @author schteppe
- * @class GHDOC.Function
+ * @class DOCJS.Function
  */
-GHDOC.Function = function(){
+DOCJS.Function = function(){
 
   /**
    * @property string name
-   * @memberof GHDOC.Function
+   * @memberof DOCJS.Function
    */
   this.name = "(untitled function)";
 
   /**
    * @property string brief
-   * @memberof GHDOC.Function
+   * @memberof DOCJS.Function
    */
   this.brief = "";
 
   /**
    * @property string description
-   * @memberof GHDOC.Function
+   * @memberof DOCJS.Function
    */
   this.description = "";
 
   /**
    * @property array parameters
-   * @memberof GHDOC.Function
+   * @memberof DOCJS.Function
    */
   this.parameters = [];
 
   /**
-   * @property GHDOC.ReturnValue returnvalue
-   * @memberof GHDOC.Function
+   * @property DOCJS.ReturnValue returnvalue
+   * @memberof DOCJS.Function
    */
   this.returnvalue = null;
 };
@@ -630,43 +630,43 @@ GHDOC.Function = function(){
 /**
  * @brief A representation of a class method.
  * @author schteppe
- * @class GHDOC.Method
- * @extends GHDOC.Function
+ * @class DOCJS.Method
+ * @extends DOCJS.Function
  */
-GHDOC.Method = function(){
+DOCJS.Method = function(){
 
   /**
    * @property string memberof
-   * @memberof GHDOC.Method
+   * @memberof DOCJS.Method
    */
   this.memberof = "";
 
-  GHDOC.Function.call( this );
+  DOCJS.Function.call( this );
 };
-GHDOC.Method.prototype = new GHDOC.Function();
+DOCJS.Method.prototype = new DOCJS.Function();
 
 /**
  * @brief A representation of a class property.
  * @author schteppe
- * @class GHDOC.Property
+ * @class DOCJS.Property
  */
-GHDOC.Property = function(){
+DOCJS.Property = function(){
 
   /**
    * @property string type
-   * @memberof GHDOC.Property
+   * @memberof DOCJS.Property
    */
   this.type = "";
 
   /**
    * @property string name
-   * @memberof GHDOC.Property
+   * @memberof DOCJS.Property
    */
   this.name = "";
 
   /**
    * @property string brief
-   * @memberof GHDOC.Property
+   * @memberof DOCJS.Property
    */
   this.brief = "";
 };
@@ -674,29 +674,29 @@ GHDOC.Property = function(){
 /**
  * @brief A representation of a page.
  * @author schteppe
- * @class GHDOC.Page
+ * @class DOCJS.Page
  */
-GHDOC.Page = function(){
+DOCJS.Page = function(){
 
   /**
    * @property string name
-   * @memberof GHDOC.Page
+   * @memberof DOCJS.Page
    */
   this.name = "";
 
   /**
    * @property string content
-   * @memberof GHDOC.Page
+   * @memberof DOCJS.Page
    */
   this.content = "";
 };
 /**
  * @fn toHTML
- * @memberof GHDOC.Page
+ * @memberof DOCJS.Page
  * @brief Returns the page content in HTML format.
  * @return string
  */
-GHDOC.Page.prototype.toHTML = function(){
+DOCJS.Page.prototype.toHTML = function(){
   return (this.content
 	  .replace(/\@section\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h1 id=\""+$1+"\">"+$2+"</h1>";})
 	  .replace(/\@subsection\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h2 id=\""+$1+"\">"+$2+"</h2>";})
@@ -706,36 +706,36 @@ GHDOC.Page.prototype.toHTML = function(){
 /**
  * @brief A representation of the main page.
  * @author schteppe
- * @class GHDOC.MainPage
- * @extends GHDOC.Page
+ * @class DOCJS.MainPage
+ * @extends DOCJS.Page
  */
-GHDOC.MainPage = function(){
-  GHDOC.Page.call( this );
+DOCJS.MainPage = function(){
+  DOCJS.Page.call( this );
 };
-GHDOC.MainPage.prototype = new GHDOC.Page();
+DOCJS.MainPage.prototype = new DOCJS.Page();
 
 /**
- * @class GHDOC.Variable
+ * @class DOCJS.Variable
  * @brief A representation of a variable.
  * @author schteppe
  */
-GHDOC.Variable = function(){
+DOCJS.Variable = function(){
 
   /**
    * @property string type
-   * @memberof GHDOC.Variable
+   * @memberof DOCJS.Variable
    */
   this.type = "";
 
   /**
    * @property string name
-   * @memberof GHDOC.Variable
+   * @memberof DOCJS.Variable
    */
   this.name = "";
 
   /**
    * @property string brief
-   * @memberof GHDOC.Variable
+   * @memberof DOCJS.Variable
    */
   this.brief = "";
 };
@@ -743,20 +743,20 @@ GHDOC.Variable = function(){
 /**
  * @brief A representation of a parameter.
  * @author schteppe
- * @class GHDOC.Parameter
- * @extends GHDOC.Variable
+ * @class DOCJS.Parameter
+ * @extends DOCJS.Variable
  */
-GHDOC.Parameter = function(){
-  GHDOC.Variable.call( this );
+DOCJS.Parameter = function(){
+  DOCJS.Variable.call( this );
 };
-GHDOC.Parameter.prototype = new GHDOC.Variable();
+DOCJS.Parameter.prototype = new DOCJS.Variable();
 
 /**
- * @class GHDOC.ReturnValue
+ * @class DOCJS.ReturnValue
  * @brief Represents the return information
- * @extends GHDOC.Variable 
+ * @extends DOCJS.Variable 
  */
-GHDOC.ReturnValue = function(){
-  GHDOC.Variable.call( this );
+DOCJS.ReturnValue = function(){
+  DOCJS.Variable.call( this );
 };
-GHDOC.ReturnValue.prototype = new GHDOC.Variable();
+DOCJS.ReturnValue.prototype = new DOCJS.Variable();
