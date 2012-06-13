@@ -1,10 +1,10 @@
-# GHDoc usage
-1. Document your code using GHDoc comment blocks
-2. Create a ```.ghdoc``` file in your repos containing regexps to match the files you want to include, example content: ```myFile\.js```
-3. Surf to ```schteppe.github.com/ghdoc#user/repos/branch``` and see your doc
+# Doc.js usage
+1. Document your code using Doc.js comment blocks.
+2. Create an HTML file that imports doc.js and runs DOCJS.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
+3. Done. Open your HTML file in your browser and view the result.
 
-## GHDoc comment blocks
-Currently only slash-star comment blocks are supported. Works great in e.g. JavaScript.
+## Doc.js comment blocks
+Currently only slash-star comment blocks are supported.
 
 ### Function
 
@@ -73,11 +73,11 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 ## How it works
 * Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
 * Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* GHDoc is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, GHDoc is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
+* Doc.js is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, Doc.js is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
 
 ## License (the MIT license)
 
-Copyright (c) 2012 GHDoc contributors
+Copyright (c) 2012 Doc.js contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
