@@ -3,12 +3,9 @@
   <head>
     <title>GHDoc</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js" ></script>
-    <script type="text/javascript" src="http://code.jquery.com/ui/jquery-ui-git.js" ></script>
-    <script type="text/javascript" src="ghdoc.js" ></script>
-    <script type="text/javascript" src="libs/d3/d3.js"></script>
-    <link href="http://code.jquery.com/ui/jquery-ui-git.css" rel="stylesheet" type="text/css" />
-    <link href="dendogram.css" rel="stylesheet" type="text/css" />
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="ghdoc.js" ></script>
+    
     <style>
       html {
         overflow-y: scroll;
@@ -21,28 +18,45 @@
       body {
         font-family:Lucida Grande, Verdana, Geneva, Arial, sans-serif;
         font-size:12px;
-        width:1000px;
-        margin-left:auto;
-        margin-right:auto;
+        margin-left:220px;
+      }
+      nav {
+        margin-left:10px;
+        display:inline;
+        position:fixed;
+        height:100%;
+        overflow:auto;
+        left:0;
+        top:0;
+        background-color:white;
+        width:200px;
       }
       header {
         text-align:center;
         padding:10px;
         margin:10px;
       }
+      section {
+        margin-bottom:80px;
+      }
       h1 {
         font-size:20px;
         padding:0px;
         margin:10px 0px;
       }
-      h2 { font-size:16px; color:#333; }
-      h3 { font-size:14px; color:#666; }
-      h4 { font-size:12px; color:#777; }
+      h2, div.page h1 { font-size:16px; color:#333; }
+      h3, div.page h2 { font-size:14px; color:#666; }
+      h4, div.page h3 { font-size:12px; color:#777; }
       footer {
-        text-align:center;
+        width:200px;
+        padding:10px 5px;
+        background-color:white;
+        position:fixed;
         font-size:10px;
+        right:0px;
+        bottom:0px;
       }
-      ul.function_overview, ul.class_overview, ul.member_overview {
+      nav ul {
         list-style-type:none;
         padding: 0px;
         margin: 0px 10px;
@@ -75,38 +89,13 @@
     </style>
   </head>
   <body>
-    <article>
-      <header>
-	<h1></h1>
-	<p></p>
-      </header>
-
-      <ul>
-	<li><a href="#overview">Overview</a></li>
-	<li><a href="#classes">Classes</a></li>
-	<li><a href="#functions">Functions</a></li>
-	<li><a href="#files">Files</a></li>
-      </ul>    
-
-      <section id="overview">
-	<h1>Loading...</h1>
-      </section>
-
-      <section id="classes">
-	<h1>Loading...</h1>
-      </section>
-
-      <section id="files">
-	<h1>Loading...</h1>
-      </section>
-
-      <section id="functions">
-	<h1>Loading...</h1>
-      </section>
-      
-      <footer>
-	<a href="http://github.com/schteppe/ghdoc">github.com/schteppe/ghdoc</a>
-      </footer>
-    </article>
+    <script>
+      GHDOC.Generate(["ghdoc.js"],
+        {
+           title:"GHDoc v0.0.1",
+           description:"An on-the-fly documentation generator for javascript"
+         }
+       );
+    </script>
   </body>
 </html>
