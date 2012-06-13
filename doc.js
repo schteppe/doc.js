@@ -27,6 +27,11 @@
 
 var DOCJS = {};
 
+/**
+ * @fn DOCJS.Generate
+ * @param Array urls
+ * @param Object options
+ */
 DOCJS.Generate = function(urls,opt){
     $("body").append("<article>\
       <nav></nav>\
@@ -239,15 +244,13 @@ DOCJS.Generate = function(urls,opt){
 
 /**
  * @class DOCJS.File
- * @brief A file
+ * @brief A representation of a file
  * @author schteppe
- * @param string user
- * @param string repos
- * @param string branch
  * @param string filename
  * @param array options
+ * @todo Needed?
  */
-DOCJS.File = function(filename,content,options){
+DOCJS.File = function(filename,options){
   // Extend options
   options = options || {};
   var opt = {
@@ -308,12 +311,6 @@ DOCJS.File = function(filename,content,options){
    * @memberof DOCJS.File
    */
   this.brief = "";
-
-    // Get file contents
-    /*
-    opt.success();
-    DOCJS.update();
-    */
 };
 
 /**
