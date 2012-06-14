@@ -34,7 +34,7 @@ var DOCJS = {};
  */
 DOCJS.Generate = function(urls,opt){
     $("body")
-	.remove("article")
+	.html("")
 	.append("<article>\
       <nav></nav>\
       <footer>\
