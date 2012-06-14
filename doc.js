@@ -33,7 +33,9 @@ var DOCJS = {};
  * @param Object options
  */
 DOCJS.Generate = function(urls,opt){
-    $("body").append("<article>\
+    $("body")
+	.remove("article")
+	.append("<article>\
       <nav></nav>\
       <footer>\
 	<a href=\"http://github.com/schteppe/doc.js\">github.com/schteppe/doc.js</a>\
@@ -230,16 +232,17 @@ DOCJS.Generate = function(urls,opt){
 	$.ajax({
 	    url:urls[i],
 	    dataType:'text',
+	    async:false,
 	    success:function(data){
 		functions = functions.concat(DOCJS.ParseFunctions(data));
 		methods = methods.concat(DOCJS.ParseMethods(data));
 		classes = classes.concat(DOCJS.ParseClasses(data));
 		properties = properties.concat(DOCJS.ParseProperties(data));
 		pages = pages.concat(DOCJS.ParsePages(data));
-		update();
 	    }
 	});
     }
+    update();
 };
 
 /**
