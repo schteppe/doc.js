@@ -71,7 +71,7 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 ```
 
 ## How it works
-* Uses [GitHub API](http://develop.github.com/) to fetch and parse a repository, and produces a neat Doxygen-like documentation site.
+* Doc.js loads live source files via AJAX, and produces a neat documentation site by parsing comment blocks.
 * Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
 * Doc.js is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, Doc.js is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
 
