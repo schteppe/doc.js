@@ -503,7 +503,7 @@ DOCJS.ParseProperties = function(src){
 	.replace(/[\s]*@property[\s]*/,"");
       var s = properties[0].split(" ");
       if(s.length<2)
-	throw "@param needs two parameters, type and name";
+	throw "@property needs two parameters, type and name";
       var property = new DOCJS.Property();
       property.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
       property.type = s.shift().trim();
