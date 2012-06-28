@@ -80,6 +80,7 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 * Ability to specify @memberof for a piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
 * <code>@example</code> and <code>@code</code> + <code>@endcode</code>
 * Parsing error list, including line numbers and such
+* Whenever a known entity is mentioned in ordinary description texts, add link
 
 ## License (the MIT license)
 
