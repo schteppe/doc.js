@@ -31,8 +31,6 @@ Currently only slash-star comment blocks are supported.
 
 ```
 /**
- * @public
- * @static
  * @fn myMethod
  * @memberof myClass
  * @brief This is a method in myClass.
@@ -46,7 +44,6 @@ Currently only slash-star comment blocks are supported.
 
 ```
 /**
- * @private
  * @property int myProperty
  * @memberof myClass
  * @brief This is a property in myClass.
@@ -74,6 +71,15 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 * Doc.js loads live source files via AJAX, and produces a neat documentation site by parsing comment blocks.
 * Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
 * Doc.js is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, Doc.js is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
+
+## Todo
+* <code>@deprecated</code> and deprecated list
+* <code>@todo</code> and todo list
+* <code>@author</code> and author lists for all entities
+* Restructure to more javascript-specified doc, Function, .prototype, the <code>this</code> keyword
+* Ability to specify @memberof for a piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
+* <code>@example</code> and <code>@code</code> + <code>@endcode</code>
+* Parsing error list?
 
 ## License (the MIT license)
 
