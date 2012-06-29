@@ -77,10 +77,11 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 * <code>@todo</code> and todo list
 * <code>@author</code> and author lists for all entities
 * Restructure to more javascript-specified doc, Function, .prototype, the <code>this</code> keyword
-* Ability to specify @memberof for a piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
+* Ability to specify <code>@memberof</code> for a piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
 * <code>@example</code> and <code>@code</code> + <code>@endcode</code>
 * Parsing error list, including line numbers and such
 * Whenever a known entity is mentioned in ordinary description texts, add link
+* <code>@markdown</code> for pages and examples?
 
 ## License (the MIT license)
 
