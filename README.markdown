@@ -69,14 +69,14 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 
 ## How it works
 * Doc.js loads live source files via AJAX, and produces a neat documentation site by parsing comment blocks.
-* Comment blocks follows the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
+* Comment blocks are similar to the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
 * Doc.js is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, Doc.js is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
 
 ## Todo
 * <code>@deprecated</code> and deprecated list
 * <code>@todo</code> and todo list
 * <code>@author</code> and author lists for all entities
-* Restructure to more javascript-specified doc, Function, .prototype, the <code>this</code> keyword
+* Restructure to more javascript-specific doc, ```@function```, ```@prototype``` (for classes), ```@this``` (in functions), ```@event``` (for classes)
 * Ability to specify <code>@memberof</code> for a piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
 * <code>@example</code> and <code>@code</code> + <code>@endcode</code>
 * Parsing error list, including line numbers and such
