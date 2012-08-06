@@ -33,6 +33,7 @@ var DOCJS = {};
  * @param Object options
  */
 DOCJS.Generate = function(urls,opt){
+    // Setup basic page layout
     $("body")
 	.html("")
 	.append("<article>\
@@ -42,12 +43,18 @@ DOCJS.Generate = function(urls,opt){
       </footer>\
     </article>");
 
+    // Options
     opt = opt || {};
     var options = {
 	title:"Hello World!",
 	description:"My first Doc.js documentation"
     };
     $.extend(options,opt);
+    
+    // Set repos header
+    $("nav")
+	.append("<h1>"+options.title+"</h1>")
+	.append("<p>"+options.description+"</p>");
 
     // Utils
     String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
@@ -55,6 +62,7 @@ DOCJS.Generate = function(urls,opt){
     String.prototype.rtrim=function(){return this.replace(/\s+$/,'');}
     String.prototype.fulltrim=function(){return this.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ');}
 
+    // Entities
     var mainpage,
     pages=[],
     classes=[],
@@ -63,21 +71,186 @@ DOCJS.Generate = function(urls,opt){
     methods=[],
     properties=[],
     name2class={};
-    
-    // Set repos header
-    $("nav")
-	.append("<h1>"+options.title+"</h1>")
-	.append("<p>"+options.description+"</p>");
+
+    function Block(src){
+	this.src = src;
+	this.lineNumber = 1;
+
+	this.author = [];   // @author
+	this.brief = [];    // @brief
+	this.classs = [];   // @class
+	this.desc = [];     // @desc, @description
+	this.event = [];    // @event
+	this.func = [];     // @fn, @function
+	this.memberof = []; // @memberof
+	this.method = [];   // @method
+	this.page = [];     // @page
+	this.param = [];    // @param, @parameter
+	this.property = []; // @property
+	this.proto = [];    // @proto, @prototype
+	this.ret = [];      // @return, @returns
+	this.see = [];      // @see
+	this.todo = [];     // @todo
+    }
+
+    function ErrorReport(filename,lineNumber,message){
+	this.lineNumber = lineNumber;
+	this.file = filename;
+	this.message = message;
+    }
+
+    // Parse blocks from a file
+    function parseBlocks(src,file){
+	var blockObjects = [];
+	// Get doc blocks a la doxygen, eg:
+	/**
+	 * Something like this!
+	 */
+	// (.(?!\*\/))* is negative lookahead, anything not followed by */
+	var blocks = src.match(/\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];
+	for(var i=0; i<blocks.length; i++){
+
+	    // find line number
+	    var idx = src.indexOf(blocks[i]);
+	    var lineNumber = (src.substr(0,idx).match(/\n/g)||[]).length + 1;
+
+	    // remove first and last slash-stars
+	    blocks[i] = blocks[i]
+		.replace(/\/\*\*[\n\t\r]*/,"")
+		.replace(/[\n\t\r]*\*\/$/,"");
+
+	    // Remove starting star + spaces
+	    var lines = blocks[i].split("\n");
+	    for(var j=0; j<lines.length; j++)
+		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
+
+	    // Create block
+	    var block = new Block();
+	    block.src = lines.join("\n");
+	    block.lineNumber = lineNumber;
+	    block.file = file;
+
+	    // Parse one-liners
+	    for(var j=0; j<lines.length; j++){
+		var line = lines[j];
+		if(!line.match(/@/)) continue;
+
+		// @author
+		var result = line.match(/@author.*$/);
+		if(result){
+		    // Check ok
+		    block.author.push(result);
+		}
+
+		// @brief
+		var result = line.match(/@brief.*$/);
+		if(result){
+		    // Check ok
+		    block.author.push(result);
+		}
+
+		// @class
+		var result = line.match(/@class.*$/);
+		if(result){
+		    // Check ok
+		    block.classs.push(result);
+		}
+
+		// @event
+		var result = line.match(/@event.*$/);
+		if(result){
+		    // Check ok
+		    block.event.push(result);
+		}
+
+		// @function
+		var result = line.match(/@function|fn.*$/);
+		if(result){
+		    // Check ok
+		    block.func.push(result);
+		}
+
+		// @memberof
+		var result = line.match(/@memberof|memberOf.*$/);
+		if(result){
+		    // Check ok
+		    block.memberof.push(result);
+		}
+
+		// @method
+		var result = line.match(/@method.*$/);
+		if(result){
+		    // Check ok
+		    block.method.push(result);
+		}
+
+		// @page
+		var result = line.match(/@page.*$/);
+		if(result){
+		    // Check ok
+		    block.page.push(result);
+		}
+
+		// @param
+		var result = line.match(/@param.*$/);
+		if(result){
+		    // Check ok
+		    block.param.push(result);
+		}
+
+		// @property
+		var result = line.match(/@property.*$/);
+		if(result){
+		    // Check ok
+		    block.property.push(result);
+		}
+
+		// @proto
+		var result = line.match(/@prototype|proto.*$/);
+		if(result){
+		    // Check ok
+		    block.proto.push(result);
+		}
+
+		// @return
+		var result = line.match(/@return|returns.*$/);
+		if(result){
+		    // Check ok
+		    block.ret.push(result);
+		}
+
+		// @see
+		var result = line.match(/@see.*$/);
+		if(result){
+		    // Check ok
+		    block.see.push(result);
+		}
+
+		// @todo
+		var result = line.match(/@todo.*$/);
+		if(result){
+		    // Check ok
+		    block.ret.push(result);
+		}
+	    }
+
+	    // Parse multi-liners
+	    // Do line by line?
+	    block.desc = block.src.match(/((@description)|(@desc))(.(?!@))*/gm)||[]; // anything but not followed by @
+	    
+	    blockObjects.push(block);
+	} 
+	return blockObjects;
+    };
 
     function update(){
-	
 	// Register hash for datatypes
-	for(var i in classes){
+	for(var i=0; i<classes.length; i++){
 	    name2class[classes[i].name] = classes[i];
 	}
 	
 	// Check for main page
-	for(var i in pages){
+	for(var i=0; i<pages.length; i++){
 	    if(pages[i] instanceof DOCJS.MainPage){
 		mainpage = pages[i];
 		pages.splice(i,1);
@@ -222,123 +395,63 @@ DOCJS.Generate = function(urls,opt){
 		.append($ul);
 	    $("article")
 		.append($details);
-	}
-	
+	}	
     }
-    DOCJS.update = update;
     
     // Get the files
     for(var i=0; i<urls.length; i++){
+	var file = urls[i];
 	$.ajax({
 	    url:urls[i],
 	    dataType:'text',
 	    async:false,
 	    success:function(data){
+		console.log(parseBlocks(data,file));
+		/*
 		functions = functions.concat(DOCJS.ParseFunctions(data));
 		methods = methods.concat(DOCJS.ParseMethods(data));
 		classes = classes.concat(DOCJS.ParseClasses(data));
 		properties = properties.concat(DOCJS.ParseProperties(data));
 		pages = pages.concat(DOCJS.ParsePages(data));
+		*/
 	    }
 	});
     }
     update();
+
+    function Entity = function(filename){
+	this.filename = filename; // where it was defined
+    }
+
+    function FileEntity(file,name){
+	Entity.call(this,file);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.name = filename;
+	this.brief = "";
+    };
+
+    function FunctionEntity(file,name,params,ret){
+	Entity.call(this,file);
+	this.name = name;
+	this.brief = "";
+    };
+    
+    function ClassEntity(file,name,params){
+	Entity.call(this,file);
+	this.name = name;
+	this.brief = "";
+    };
+    
+    function PageEntity(file,name,content){
+	Entity.call(this,file);
+	this.name = name;
+	this.content = content;
+    };
+    
+    
 };
 
-/**
- * @class DOCJS.File
- * @brief A representation of a file
- * @author schteppe
- * @param string filename
- * @param array options
- * @todo Needed?
- */
-DOCJS.File = function(filename,options){
-  // Extend options
-  options = options || {};
-  var opt = {
-    success:function(){},
-    async:true
-  };
-  $.extend(opt,options);
-
-  /**
-   * @property string name
-   * @brief The file name
-   * @memberof DOCJS.File
-   */
-  this.name = filename;
-
-  /**
-   * @property array classes
-   * @brief Classes found in the file
-   * @memberof DOCJS.File
-   */
-  this.classes = [];
-
-  /**
-   * @property array methods
-   * @brief Methods found in the file
-   * @memberof DOCJS.File
-   */
-  this.methods = [];
-
-  /**
-   * @property array functions
-   * @brief Functions found in the file
-   * @memberof DOCJS.File
-   */
-  this.functions = [];
-
-  /**
-   * @property array pages
-   * @brief Pages found in the file
-   * @memberof DOCJS.File
-   */
-  this.pages = [];
-
-  /**
-   * @property array properties
-   * @memberof DOCJS.File
-   */
-  this.properties = [];
-
-  /**
-   * @property string content
-   * @memberof DOCJS.File
-   */
-  this.content = null;
-
-  /**
-   * @property string brief
-   * @memberof DOCJS.File
-   */
-  this.brief = "";
-};
-
-/**
- * @fn DOCJS.ParseBlocks
- * @author schteppe
- * @brief Parse documentation blocks.
- * @param string src Source code to parse.
- * @return array
- */
-DOCJS.ParseBlocks = function(src){
-  // Get doc blocks a la doxygen
-  // (.(?!\*\/))* is negative lookahead, anything not followed by */
-  var blocks = src.match(/[\s\t]*\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];//match(/\/\*\*([.\n\s\t\r\w*\@:\.\?\!\-_\d#]*)\*\//gm) || [];
-  for(i in blocks){
-    // trim
-    blocks[i] = blocks[i]
-      .replace(/\/\*\*[\n\t\r]*/,"")
-      .replace(/[\n\t\r]*\*\/$/,"");
-    var lines = blocks[i].split("\n");
-    for(j in lines)
-      lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
-    blocks[i] = lines.join("\n");
-  } 
-  return blocks;
-};
 
 /**
  * @fn DOCJS.ParseMethods
