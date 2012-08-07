@@ -87,6 +87,7 @@ Use the @mainpage to create the first page in your documentation. The @page comm
 * Parsing error list, including line numbers and such
 * Whenever a known entity is mentioned in ordinary description texts, add link
 * <code>@markdown</code> for pages and examples?
+* Library version, title, description?
 
 ## License (the MIT license)
 
