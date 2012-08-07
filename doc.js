@@ -1,37 +1,5 @@
-/**
- * @file doc.js
- * @brief Main JavaScript file
- */
-
-/**
- * @mainpage About
- *
- * @section intro_sec What is Doc.js?
- * Doc.js is a web based on-the-fly documentation generator.
- * 
- * @section install_sec Usage
- * 
- * @subsection step1 Step 1: Document your code
- * Using Doc.js comment blocks.
- * 
- * @subsection step1 Step 2: Create an HTML file
- * Create an HTML file that imports doc.js and runs DOCJS.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
- *
- * @subsection step1 Step 3: Done
- * Open your HTML file in your browser and view the result.
- *
- * @section contrib_sec Contribute
- * If you like this software, help making it better. Fork the code on https://github.com/schteppe/doc.js
- *
- */
-
 var DOCJS = {};
 
-/**
- * @fn DOCJS.Generate
- * @param Array urls
- * @param Object options
- */
 DOCJS.Generate = function(urls,opt){
     // Setup basic page layout
     $("body")
@@ -74,8 +42,13 @@ DOCJS.Generate = function(urls,opt){
 
     // A comment block in the code.
     function Block(src){
+
+	var lines, parsedLines = [], that=this;
+	function splitLines(){
+	    if(!lines) lines = src.split("\n");
+	}
+
 	this.src = src;
-	var lines;
 	this.lineNumber = 1;
 
 	this.author = [];   // @author
@@ -94,7 +67,6 @@ DOCJS.Generate = function(urls,opt){
 	this.see = [];      // @see
 	this.todo = [];     // @todo
 
-	var parsedLines = [];
 	this.markLineAsParsed = function(lineNumber){
 	    if(!that.lineIsParsed(lineNumber))
 		parsedLines.push(lineNumber);
@@ -103,11 +75,20 @@ DOCJS.Generate = function(urls,opt){
 	    return parsedLines.indexOf(lineNumber)!=-1;
 	};
 	this.getLine = function(lineNumber){
-	    if(!lines) lines = src.split("\n");
+	    splitLines();
 	    return lines[lineNumber];
 	};
+	this.getNumLines = function(){
+	    splitLines();
+	    return lines.length;
+	};
 	this.getUnparsedLines = function(){
-	    throw new Error("todo");
+	    var unparsed = [], n = that.getNumLines();
+	    for(var i=0; i<n; i++){
+		if(!that.lineIsParsed(i))
+		    unparsed.push(that.getLine(i));
+	    }
+	    return unparsed;
 	};
     }
 
@@ -115,6 +96,296 @@ DOCJS.Generate = function(urls,opt){
 	this.lineNumber = lineNumber;
 	this.file = filename;
 	this.message = message;
+    }
+
+    // An Entity is a set of Command's
+    // The Entities corresponds to a thing that is viewed to the user, eg. Function, Class etc.
+    function Entity(filename){
+	this.filename = filename; // where it was defined
+    }
+
+    function FileEntity(file,name){
+	Entity.call(this,file);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.name = filename;
+	this.brief = "";
+    }
+
+    function FunctionEntity(file,name,params,ret){
+	Entity.call(this,file);
+	this.name = name;
+	this.brief = "";
+    }
+    
+    function ClassEntity(file,name,params){
+	Entity.call(this,file);
+	this.name = name;
+	this.brief = "";
+    }
+    
+    function PageEntity(file,name,content){
+	Entity.call(this,file);
+	this.name = name;
+	this.content = content;
+    }
+
+    // A parsed command
+    function Command(block){
+	if(!(block instanceof Block)) throw new Error("Argument block must be instance of Block");
+	this.getBlock = function(){ return block; };
+	this.setBlock = function(b){ block = b; };
+    }
+
+    function AuthorCommand(block,content){
+	Command.call(this,block);
+	this.getContent = function(){ return content; };
+	this.setContent = function(n){ content=n; };
+    }
+    AuthorCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @author authorString
+	     */
+	    var result = line.match(/@author\s+(.*)$/);
+	    if(result && result.length==2){
+		var author = new AuthorCommand(block,result[1]);
+		block.markLineAsParsed(j);
+		commands.push(author);
+	    }
+	}
+	return commands;
+    }
+
+    function BriefCommand(block,content){
+	Command.call(this,block);
+	this.getContent = function(){ return content; };
+	this.setContent = function(c){ content=c; };
+    }
+    BriefCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @brief briefString
+	     */
+	    var result = line.match(/@brief\s+(.*)$/);
+	    if(result && result.length==2){
+		var command = new BriefCommand(block,result[1]);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function ClassCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    ClassCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @class ClassNameInOneWord
+	     */
+	    var result = line.match(/@class\s+([^\s]*)/);
+	    if(result && result.length==2){
+		var command = new ClassCommand(block,result[1]);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function DescriptionCommand(block,content){
+	Command.call(this,block);
+	this.getContent = function(){ return content; };
+	this.setContent = function(n){ content=n; };
+    }
+    DescriptionCommand.parse = function(block,errors){
+	var commands=[], src = block.getUnparsedLines().join("\n");
+	var result = src.match(/((@description)|(@desc))\s+((.(?!@))*)/m)||[]; // anything but not followed by @
+	if(result.length>=4){
+	    var command = new DescriptionCommand(block,result[4]);
+	    commands.push(command);
+	}
+	return commands;
+    }
+
+    function EventCommand(block,name,description){
+	Command.call(this,block);
+	description = description || "";
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDescription = function(){ return description; };
+	this.setDescription = function(s){ description=s; };
+    }
+    EventCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @event name [description]
+	     */
+	    var result = line.match(/@event\s+([^\s]*)(\s+(.*)){0,1}$/);
+	    if(result){
+		var name = result[1];
+		var desc;
+		if(result.length>=3) desc = result[2];
+		var command = new EventCommand(block,name,desc);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function FunctionCommand(block,name,description){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDescription = function(){ return description; };
+	this.setDescription = function(n){ description=n; };
+    }
+    FunctionCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @[function|fn] name [description]
+	     */
+	    var result = line.match(/@function|fn\s+([^\s]*)(\s+(.*)){0,1}$/);
+	    if(result){
+		var name = result[1];
+		var desc;
+		if(result.length>=3) desc = result[3];
+		var command = new FunctionCommand(block,name,desc);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function MemberofCommand(block,className){
+	Command.call(this,block);
+	this.getClassName = function(){ return className; };
+	this.setClassName = function(n){ className=n; };
+    }
+    MemberofCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @[memberof|memberOf] ClassName
+	     */
+	    var result = line.match(/(@memberOf)|(@memberof)\s+([^\s]*)/);
+	    if(result && result.length>=4){
+		var classname = result[3];
+		var command = new MemberofCommand(block,classname);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function MethodCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    MethodCommand.parse = function(block,errors){
+	return [];
+    }
+
+    function PageCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    PageCommand.parse = function(block,errors){
+	return [];
+    }
+
+    function ParamCommand(block,dataType,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDataType = function(){ return dataType; };
+	this.setDataType = function(n){ dataType=n; };
+    }
+    ParamCommand.parse = function(block,errors){
+	/*
+		// @param
+		var result = line.match(/@param.*$/);
+		if(result){
+		    // Check ok
+		    block.param.push(result);
+		}
+	*/
+	return [];
+    }
+
+    function PropertyCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    PropertyCommand.parse = function(block,errors){
+	return [];
+    }
+
+    function PrototypeCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    PrototypeCommand.parse = function(block,errors){
+	return [];
+    }
+
+    function ReturnCommand(block,dataType,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDataType = function(){ return dataType; };
+	this.setDataType = function(n){ dataType=n; };
+    }
+    ReturnCommand.parse = function(block,errors){
+/*		// @return
+		var result = line.match(/@return|returns.*$/);
+		if(result){
+		    // Check ok
+		    block.ret.push(result);
+		}
+
+*/
+	return [];
+    }
+
+    function SeeCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    SeeCommand.parse = function(block,errors){
+	return [];
+    }
+
+    function TodoCommand(block,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+    }
+    TodoCommand.parse = function(block,errors){
+	return [];
     }
 
     // Parse blocks from a file
@@ -143,118 +414,27 @@ DOCJS.Generate = function(urls,opt){
 		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
 
 	    // Create block
-	    var block = new Block();
-	    block.src = lines.join("\n");
+	    var block = new Block(blocks[i]);
 	    block.lineNumber = lineNumber;
 	    block.file = file;
+	    var errors = [];
 
-	    // Parse one-liners
-	    for(var j=0; j<lines.length; j++){
-		var line = lines[j];
-		if(!line.match(/@/)) continue;
-
-		// @author
-		var result = line.match(/@author.*$/);
-		if(result){
-		    // Check ok
-		    block.author.push(result);
-		}
-
-		// @brief
-		var result = line.match(/@brief.*$/);
-		if(result){
-		    // Check ok
-		    block.author.push(result);
-		}
-
-		// @class
-		var result = line.match(/@class.*$/);
-		if(result){
-		    // Check ok
-		    block.classs.push(result);
-		}
-
-		// @event
-		var result = line.match(/@event.*$/);
-		if(result){
-		    // Check ok
-		    block.event.push(result);
-		}
-
-		// @function
-		var result = line.match(/@function|fn.*$/);
-		if(result){
-		    // Check ok
-		    block.func.push(result);
-		}
-
-		// @memberof
-		var result = line.match(/@memberof|memberOf.*$/);
-		if(result){
-		    // Check ok
-		    block.memberof.push(result);
-		}
-
-		// @method
-		var result = line.match(/@method.*$/);
-		if(result){
-		    // Check ok
-		    block.method.push(result);
-		}
-
-		// @page
-		var result = line.match(/@page.*$/);
-		if(result){
-		    // Check ok
-		    block.page.push(result);
-		}
-
-		// @param
-		var result = line.match(/@param.*$/);
-		if(result){
-		    // Check ok
-		    block.param.push(result);
-		}
-
-		// @property
-		var result = line.match(/@property.*$/);
-		if(result){
-		    // Check ok
-		    block.property.push(result);
-		}
-
-		// @proto
-		var result = line.match(/@prototype|proto.*$/);
-		if(result){
-		    // Check ok
-		    block.proto.push(result);
-		}
-
-		// @return
-		var result = line.match(/@return|returns.*$/);
-		if(result){
-		    // Check ok
-		    block.ret.push(result);
-		}
-
-		// @see
-		var result = line.match(/@see.*$/);
-		if(result){
-		    // Check ok
-		    block.see.push(result);
-		}
-
-		// @todo
-		var result = line.match(/@todo.*$/);
-		if(result){
-		    // Check ok
-		    block.ret.push(result);
-		}
-	    }
-
-	    // Parse multi-liners
-	    // Do line by line?
-	    block.desc = block.src.match(/((@description)|(@desc))(.(?!@))*/gm)||[]; // anything but not followed by @
+	    // Parse commands from block
+	    block.author =   AuthorCommand.parse(block,errors);
+	    block.brief =    BriefCommand.parse(block,errors);
+	    block.classs =   ClassCommand.parse(block,errors);
+	    block.event =    EventCommand.parse(block,errors);
+	    block.func =     FunctionCommand.parse(block,errors);
+	    block.memberof = MemberofCommand.parse(block,errors);
+	    block.method =   MethodCommand.parse(block,errors);
+	    block.page =     PageCommand.parse(block,errors);
+	    block.param =    ParamCommand.parse(block,errors);
+	    block.property = PropertyCommand.parse(block,errors);
+	    block.proto =    PrototypeCommand.parse(block,errors);
+	    block.ret =      ReturnCommand.parse(block,errors);
+	    block.see =      SeeCommand.parse(block,errors);
+	    block.todo =     TodoCommand.parse(block,errors);
+	    block.desc =     DescriptionCommand.parse(block,errors);
 	    
 	    blockObjects.push(block);
 	} 
@@ -425,82 +605,9 @@ DOCJS.Generate = function(urls,opt){
 	    async:false,
 	    success:function(data){
 		console.log(parseBlocks(data,file));
-		/*
-		functions = functions.concat(DOCJS.ParseFunctions(data));
-		methods = methods.concat(DOCJS.ParseMethods(data));
-		classes = classes.concat(DOCJS.ParseClasses(data));
-		properties = properties.concat(DOCJS.ParseProperties(data));
-		pages = pages.concat(DOCJS.ParsePages(data));
-		*/
 	    }
 	});
     }
     update();
-
-    // An Entity is a set of Command's
-    // The Entities corresponds to a thing that is viewed to the user, eg. Function, Class etc.
-    function Entity(filename){
-	this.filename = filename; // where it was defined
-    }
-
-    function FileEntity(file,name){
-	Entity.call(this,file);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
-	this.name = filename;
-	this.brief = "";
-    }
-
-    function FunctionEntity(file,name,params,ret){
-	Entity.call(this,file);
-	this.name = name;
-	this.brief = "";
-    }
-    
-    function ClassEntity(file,name,params){
-	Entity.call(this,file);
-	this.name = name;
-	this.brief = "";
-    }
-    
-    function PageEntity(file,name,content){
-	Entity.call(this,file);
-	this.name = name;
-	this.content = content;
-    }
-
-    // A parsed command
-    function Command(block){
-	this.getBlock = function(){ return block; };
-	this.setBlock = function(b){ block = b; };
-    }
-
-    function ParamCommand(block,dataType,name){
-	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
-	this.getDataType = function(){ return dataType; };
-	this.setDataType = function(n){ dataType=n; };
-    }
-    ParamCommand.parse = function(block){
-	// Parse block, return array of ParamCommand 
-	return []; // todo
-    }
-
-    function AuthorCommand(block,name,email){
-	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
-	this.getEmail = function(){ return email; };
-	this.setEmail = function(n){ email=n; };
-    }
-
-    function ReturnCommand(block,dataType,name){
-	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
-	this.getDataType = function(){ return dataType; };
-	this.setDataType = function(n){ dataType=n; };
-    }
 };
 

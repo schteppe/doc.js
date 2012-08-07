@@ -29,6 +29,13 @@ app.get('/doc.js', function(req, res){
     });
 });
 
+app.get('/README.markdown', function(req, res){
+    fs.readFile(__dirname + '/../../README.markdown', 'utf8', function(err, text){
+	//res.setHeader('Content-Type', "text/javascript");
+        res.send(text);
+    });
+});
+
 // Start Webserver
 var server = http.createServer(app).listen(config.port);
 console.log("Express server listening on port "+config.port);

@@ -10,10 +10,13 @@ Currently only slash-star comment blocks are supported.
 
 ```
 /**
- * @fn myFunc
- * @brief This is a description of myFunc()
- * @param string myParam This is a description of myParam
- * @return int Description of return value
+ * @fn myFunc Description is optional.
+ * @brief This is an optional description of myFunc()
+ * @description A longer description
+ * @param string myParam This is an optional description of myParam
+ * @author schteppe
+ * @author secondAuthor and contact info here, if you like
+ * @return int Optional description of return value. Command begins with datatype.
  */
 ```
 
@@ -24,6 +27,8 @@ Currently only slash-star comment blocks are supported.
  * @class myClass
  * @brief This is a description of the class myClass
  * @param int myConstructorParameter
+ * @event eventWithoutDescription
+ * @event eventName An event that an instance of the class dispatches.
  */
 ```
 
@@ -31,11 +36,11 @@ Currently only slash-star comment blocks are supported.
 
 ```
 /**
- * @fn myMethod
+ * @method myMethod
  * @memberof myClass
  * @brief This is a method in myClass.
- * @param int myConstructorParameter1
- * @param int myConstructorParameter2
+ * @param int param1
+ * @param int param2
  * @return float
  */
 ```
