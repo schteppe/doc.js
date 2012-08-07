@@ -5,7 +5,7 @@ DOCJS.Generate = function(urls,opt){
     // Options
     opt = opt || {};
     var options = {
-	title:"Hello World!",
+	title:"Hello World!", // Should these be fetched from the blocks?
 	description:"My first Doc.js documentation"
     };
     $.extend(options,opt);
@@ -562,8 +562,8 @@ DOCJS.Generate = function(urls,opt){
 	
 	// Sort
 	var sortbyname=function(a,b){
-	    if(a.name>b.name) return 1;
-	    if(a.name<b.name) return -1;
+	    if(a.getName() > b.getName()) return 1;
+	    if(a.getName() < b.getName()) return -1;
 	    else return 0;
 	};
 	pages.sort(sortbyname);
@@ -576,9 +576,46 @@ DOCJS.Generate = function(urls,opt){
 	    else
 		return name;
 	}
+
+	// Create a section e.g. Classes, Functions, etc
+	function createSection(id,title,$content){
+	    var $title =  $("<h1>"+title+"</h1>");
+	    var $section = $("<section id=\""+id+"\"></section>");
+	    $section
+		.append($title);
+	    if($content.length)
+		for(var i=0; i<$content.length; i++)
+		    $section.append($content[i]);
+	    else
+		$section.append($content);
+	    $("article").append($section);
+	}
+	
+	// Create corresp. menu list
+	function createMenuList(title,items){
+	    var $ul = $("<ul></ul>");
+	    $("nav")
+		.append("<h2>"+title+"</h2>")
+		.append($ul);
+	    for(var i=0; i<items.length; i++){
+		$li = $("<li></li>");
+		$li.append(items[i]);
+		$ul.append($li);
+	    }
+	}
 	
 	// Pages
 	if(pages.length > 0){
+	    var links = [], contents = [];
+	    for(var i=0; i<pages.length; i++){
+		var page = pages[i];
+		contents.push("<section id=\"pages-"+page.getName()+"\">"+page.toHTML()+"</section>");
+		links = $("<a href=\"#"+page.getName()+"\">"+page.getName()+"</a>");
+	    }
+	    createSection("pages","Pages",contents);
+	    createMenuList("Pages",links);
+
+	    /*
 	    $("nav").append("<h2>Pages</h2>");
 	    $("article").append($("<section id=\"pages\"><h1>Pages</h1></section>"));
 	    for(var i=0; i<pages.length; i++){
@@ -588,10 +625,102 @@ DOCJS.Generate = function(urls,opt){
 		$("#pages")
 		    .append("<div id=\""+page.name+"\" class=\"page\">"+page.toHTML()+"</div>");
 	    }
+	    */
+	}
+
+	// Functions
+	if(functions.length > 0){
+	    var links = [], contents = [];
+	    for(var i=0; i<functions.length; i++){
+		var f = functions[i];
+		contents.push("<section id=\"functions-"+f.getName()+"\">"+f.getName()+"</section>");
+		links = $("<a href=\"#"+f.getName()+"\">"+f.getName()+"</a>");
+	    }
+	    createSection("functions","Functions",contents);
+	    createMenuList("Functions",links);
 	}
 	
 	// Classes
 	if(classes.length > 0){
+	    var links = [], contents = [];
+	    for(var i=0; i<classes.length; i++){
+		var c = classes[i];
+		var $sec = $("<section id=\"classes-"+c.getName()+"\"></section>");
+		$sec.append($("<h2>"+c.getName()+"</h2>"));
+
+		// Constructor
+		var args = []; // todo
+		$sec.append($("<h3>Constructor</h3>"));
+		$sec.append($("<p>"+c.getName() + " ( " + args.join(" , ")+" )</p>"));
+
+		// Method overview table
+		var numMethods = c.numMethods();
+		if(numMethods>0){
+		    $sec.append($("<h3>Methods</h3>"));
+		    var $methods = $("<table></table>")
+			.addClass("member_overview");
+		    for(var k=0; k<numMethods; k++){
+			var method = c.getMethod(k);
+			var params = [];
+			for(var k=0; k<method.numParameters(); k++){
+			    var param = method.getParameter(k);
+			    params.push("<span class=\"datatype\">"+"type"+"</span>" + " " + param.getName());
+			}
+			$methods
+			    .append($("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>"
+				      + m.name + " ( " +params.join(" , ")+ " )</td></tr>"))
+			    .append($("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>"));
+			/*
+			  if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
+			  $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
+			*/
+		    }
+		    $sec.append($methods);
+		}
+		
+		// Properties
+		var numProperties = c.numProperties();
+		if(numProperties>0){
+		    $sec.append($("<h3>Properties</h3>"));
+		    var $properties = $("<table></table>").addClass("member_overview");
+		    for(var k=0; k<numProperties; k++){
+			var p = c.getProperty(k);
+			$properties.append("<tr><td class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
+		    }
+		    $sec.append($properties);
+		}
+
+		contents.push($sec);
+		/*
+		var $methods = $("<table></table>")
+		    .addClass("member_overview")
+		    .append("<tr><td class=\"datatype\">&nbsp;</td><td>" + c.getName() + " ( " + args.join(" , ") + " )</td></tr>");
+		
+		// Methods
+		for(var k=0; k<c.numMethods(); k++){
+		    var m = c.getMethod(k);
+		    if(m.memberof==c.name){
+			
+			var margs = [];
+			for(var k in m.parameters)
+			    margs.push("<span class=\"datatype\">"+datatype2link(m.parameters[k].type)+"</span>" + " " + m.parameters[k].name);
+
+			$methods
+			    .append("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
+			    .append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
+			
+			if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
+			    $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
+		    }
+		}
+		*/
+
+		links.push($("<a href=\"#"+c.getName()+"\">"+c.getName()+"</a>"));
+	    }
+	    createSection("classes","Classes",contents);
+	    createMenuList("Classes",links);
+
+	    /*
 	    var $ul = $("<ul></ul>");
 	    var $details = $("<section id=\"classes\"><h1>Classes</h1></section>");
 	    for(var j=0; j<classes.length; j++){
@@ -657,6 +786,7 @@ DOCJS.Generate = function(urls,opt){
 		.append($ul);
 	    $("nav").append($classes);
 	    $("article").append($details);
+	    */
 	}
 	
 	// Functions
