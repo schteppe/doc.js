@@ -72,8 +72,10 @@ DOCJS.Generate = function(urls,opt){
     properties=[],
     name2class={};
 
+    // A comment block in the code.
     function Block(src){
 	this.src = src;
+	var lines;
 	this.lineNumber = 1;
 
 	this.author = [];   // @author
@@ -91,6 +93,22 @@ DOCJS.Generate = function(urls,opt){
 	this.ret = [];      // @return, @returns
 	this.see = [];      // @see
 	this.todo = [];     // @todo
+
+	var parsedLines = [];
+	this.markLineAsParsed = function(lineNumber){
+	    if(!that.lineIsParsed(lineNumber))
+		parsedLines.push(lineNumber);
+	};
+	this.lineIsParsed = function(lineNumber){
+	    return parsedLines.indexOf(lineNumber)!=-1;
+	};
+	this.getLine = function(lineNumber){
+	    if(!lines) lines = src.split("\n");
+	    return lines[lineNumber];
+	};
+	this.getUnparsedLines = function(){
+	    throw new Error("todo");
+	};
     }
 
     function ErrorReport(filename,lineNumber,message){
@@ -419,7 +437,9 @@ DOCJS.Generate = function(urls,opt){
     }
     update();
 
-    function Entity = function(filename){
+    // An Entity is a set of Command's
+    // The Entities corresponds to a thing that is viewed to the user, eg. Function, Class etc.
+    function Entity(filename){
 	this.filename = filename; // where it was defined
     }
 
@@ -429,447 +449,58 @@ DOCJS.Generate = function(urls,opt){
 	this.setName = function(n){ name=n; };
 	this.name = filename;
 	this.brief = "";
-    };
+    }
 
     function FunctionEntity(file,name,params,ret){
 	Entity.call(this,file);
 	this.name = name;
 	this.brief = "";
-    };
+    }
     
     function ClassEntity(file,name,params){
 	Entity.call(this,file);
 	this.name = name;
 	this.brief = "";
-    };
+    }
     
     function PageEntity(file,name,content){
 	Entity.call(this,file);
 	this.name = name;
 	this.content = content;
-    };
-    
-    
-};
-
-
-/**
- * @fn DOCJS.ParseMethods
- * @author schteppe
- * @param string src
- * @return array An array of parsed DOCJS.Method objects
- */
-DOCJS.ParseMethods = function(src){
-  var result = [];
-  // Get doc blocks a la doxygen
-  var blocks = DOCJS.ParseBlocks(src);
-  for(i in blocks){
-    // Methods have "@memberof" tags to reference their class AND a "@fn" tag for their name
-    var fns = blocks[i].match(/\@fn([^@]*)/g);
-    var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
-    if(memberofs && memberofs.length>=1 && fns && fns.length>=1){
-      var m = new DOCJS.Method();
-      m.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
-      m.name = fns[0].replace(/[\s]*@fn[\s]*/,"");
-      m.parameters = DOCJS.ParseParameters(blocks[i]);
-      m.brief = DOCJS.ParseBrief(blocks[i]);
-      m.returnvalue = DOCJS.ParseReturn(blocks[i]);
-      result.push(m);
     }
-  }
-  return result;
-};
 
-/**
- * @fn DOCJS.ParsePages
- * @author schteppe
- * @param string src
- * @return array An array of parsed DOCJS.Page objects
- */
-DOCJS.ParsePages = function(src){
-  var result = [];
-  // Get doc blocks a la doxygen
-  var blocks = DOCJS.ParseBlocks(src);
-  for(i in blocks){
-    // Pages got the @page command
-    var pages = blocks[i].match(/\@(page|mainpage)([^@]*)/g);
-    if(pages && pages.length>=1){
-      var p = pages[0].match("main") ? new DOCJS.MainPage() : new DOCJS.Page();
-      p.name = "Main page";
-      blocks[i].replace(/\@(page|mainpage)[\s]*(.*)/,function(m,$1,$2){ p.name = $2.trim(); return m; });
-      p.content = blocks[i].replace(/[\s]*@(page|mainpage).*/,"").trim();
-      result.push(p);
+    // A parsed command
+    function Command(block){
+	this.getBlock = function(){ return block; };
+	this.setBlock = function(b){ block = b; };
     }
-  }
-  return result;
-};
 
-/**
- * @fn DOCJS.ParseClasses
- * @author schteppe
- * @brief Parse source code.
- * @param string src
- * @return array An array of parsed objects
- */
-DOCJS.ParseClasses = function(src){
-
-  var result = [];
-
-  // Get doc blocks a la doxygen
-  var blocks = DOCJS.ParseBlocks(src);
-  for(i in blocks){
-
-    // Classes have "@class" to define their name
-    var classes = blocks[i].match(/\@class([^@]*)/g);
-    for(j in classes){
-      classes[j] = classes[j]
-	.replace(/[\s]*@class[\s]*/,"");
-      var s = classes[j];
-      var c = new DOCJS.Class();
-      c.name = s.trim();
-      c.parameters = DOCJS.ParseParameters(blocks[i]);
-      c.brief = DOCJS.ParseBrief(blocks[i]);
-      result.push(c);
+    function ParamCommand(block,dataType,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDataType = function(){ return dataType; };
+	this.setDataType = function(n){ dataType=n; };
     }
-  }
-  return result;
-};
-
-/**
- * @fn DOCJS.ParseFunctions
- * @author schteppe
- * @param string src
- * @return array An array of parsed objects
- */
-DOCJS.ParseFunctions = function(src){
-
-  var result = [];
-
-  // Get doc blocks a la doxygen
-  var blocks = DOCJS.ParseBlocks(src);
-  for(i in blocks){
-    // functions have "@fn" to define their name
-    var functions = blocks[i].match(/\@fn([^@]*)/g);
-    var memberofs = blocks[i].match(/\@memberof([^@]*)/g);
-    if(functions && !memberofs){
-      for(j in functions){
-	functions[j] = functions[j]
-	  .replace(/[\s]*@fn[\s]*/,"");
-	var s = functions[j];
-	var c = new DOCJS.Function();
-	c.name = s.trim();
-	c.parameters = DOCJS.ParseParameters(blocks[i]);
-	c.brief = DOCJS.ParseBrief(blocks[i]);
-	c.returnvalue = DOCJS.ParseReturn(blocks[i]);
-	result.push(c);
-      }
+    ParamCommand.parse = function(block){
+	// Parse block, return array of ParamCommand 
+	return []; // todo
     }
-  }
 
-  return result;
-};
-
-/**
- * @fn DOCJS.ParseParameters
- * @author schteppe
- * @brief Parses parameter data from a string.
- * @param string src Source code to parse from.
- * @return array An array of DOCJS.Parameter objects
- */
-DOCJS.ParseParameters = function(src){
-  var result = [],
-  params = src.match(/@param([^@]*)/g);
-  for(j in params){
-    params[j] = params[j]
-      .replace(/[\s]*@param[\s]*/,"");
-    var s = params[j].split(" ",2);
-    var param = new DOCJS.Parameter();
-    if(s.length==2){
-      param.type = s[0].trim();
-      param.name = s[1].trim();
-    } else if(s.length==1){
-      param.type = "";
-      param.name = s[0].trim();
+    function AuthorCommand(block,name,email){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getEmail = function(){ return email; };
+	this.setEmail = function(n){ email=n; };
     }
-    param.brief = params[j].replace(s[0],"").replace(s[1],"").trim();
-    result.push(param);
-  }
-  return result;
-};
 
-/**
- * @fn DOCJS.ParseProperties
- * @author schteppe
- * @param string src Source code to parse from.
- * @return array An array of DOCJS.Property objects
- */
-DOCJS.ParseProperties = function(src){
-  var result = [];
-
-  var blocks = DOCJS.ParseBlocks(src);
-  for(i in blocks){
-    // Properties have @property and @memberof commands
-    var properties = blocks[i].match(/\@property([^\n])*/),
-      memberofs = blocks[i].match(/\@memberof([^\n])*/);
-    if(properties && memberofs){
-      properties[0] = properties[0]
-	.replace(/[\s]*@property[\s]*/,"");
-      var s = properties[0].split(" ");
-      if(s.length<2)
-	throw "@property needs two parameters, type and name";
-      var property = new DOCJS.Property();
-      property.memberof = memberofs[0].replace(/[\s]*@memberof[\s]*/,"").trim();
-      property.type = s.shift().trim();
-      property.name = s.shift().trim();
-      property.brief = DOCJS.ParseBrief(blocks[i]);
-      result.push(property);
+    function ReturnCommand(block,dataType,name){
+	Command.call(this,block);
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getDataType = function(){ return dataType; };
+	this.setDataType = function(n){ dataType=n; };
     }
-  }
-  return result;
 };
 
-/**
- * @fn DOCJS.ParseBrief
- * @author schteppe
- * @brief Parses brief information from a code block
- * @param string src
- * @return string Brief description
- */
-DOCJS.ParseBrief = function(src){
-  var result = "",
-  briefs = src.match(/@brief([^@]*)/g);
-  for(j in briefs){
-    briefs[j] = briefs[j]
-      .replace(/[\s]*@brief[\s]*/,"");
-    result += briefs[j].trim();
-  }
-  return result;
-};
-
-/**
- * @fn DOCJS.ParseReturn
- * @author schteppe
- * @brief Parses the information about the return value
- * @param string src
- * @return DOCJS.ReturnValue
- */
-DOCJS.ParseReturn = function(src){
-  var returns = src.match(/@return([^@]*)/);
-  if(returns && returns.length){
-    var result = new DOCJS.ReturnValue();
-    var r = returns[0].replace(/[\s]*@return[\s]*/,"").trim().split(" ");
-    result.type = r.shift();
-    result.brief = r.join(" ");
-    return result;
-  }
-};
-
-/**
- * @class DOCJS.Class
- * @author schteppe
- * @brief A representation of a class.
- */
-DOCJS.Class = function(){
-
-  /**
-   * @property DOCJS.Class parent
-   * @memberof DOCJS.Class
-   */
-  this.parent = null;
-
-  /**
-   * @property array methods
-   * @memberof DOCJS.Class
-   */
-  this.methods = [];
-
-  /**
-   * @property array properties
-   * @memberof DOCJS.Class
-   */
-  this.properties = [];
-
-  /**
-   * @property array parameters
-   * @memberof DOCJS.Class
-   */
-  this.parameters = []; // for constructor
-
-  /**
-   * @property string brief
-   * @memberof DOCJS.Class
-   */
-  this.brief = "";
-};
-
-/**
- * @brief A representation of a function
- * @author schteppe
- * @class DOCJS.Function
- */
-DOCJS.Function = function(){
-
-  /**
-   * @property string name
-   * @memberof DOCJS.Function
-   */
-  this.name = "(untitled function)";
-
-  /**
-   * @property string brief
-   * @memberof DOCJS.Function
-   */
-  this.brief = "";
-
-  /**
-   * @property string description
-   * @memberof DOCJS.Function
-   */
-  this.description = "";
-
-  /**
-   * @property array parameters
-   * @memberof DOCJS.Function
-   */
-  this.parameters = [];
-
-  /**
-   * @property DOCJS.ReturnValue returnvalue
-   * @memberof DOCJS.Function
-   */
-  this.returnvalue = null;
-};
-
-/**
- * @brief A representation of a class method.
- * @author schteppe
- * @class DOCJS.Method
- * @extends DOCJS.Function
- */
-DOCJS.Method = function(){
-
-  /**
-   * @property string memberof
-   * @memberof DOCJS.Method
-   */
-  this.memberof = "";
-
-  DOCJS.Function.call( this );
-};
-DOCJS.Method.prototype = new DOCJS.Function();
-
-/**
- * @brief A representation of a class property.
- * @author schteppe
- * @class DOCJS.Property
- */
-DOCJS.Property = function(){
-
-  /**
-   * @property string type
-   * @memberof DOCJS.Property
-   */
-  this.type = "";
-
-  /**
-   * @property string name
-   * @memberof DOCJS.Property
-   */
-  this.name = "";
-
-  /**
-   * @property string brief
-   * @memberof DOCJS.Property
-   */
-  this.brief = "";
-};
-
-/**
- * @brief A representation of a page.
- * @author schteppe
- * @class DOCJS.Page
- */
-DOCJS.Page = function(){
-
-  /**
-   * @property string name
-   * @memberof DOCJS.Page
-   */
-  this.name = "";
-
-  /**
-   * @property string content
-   * @memberof DOCJS.Page
-   */
-  this.content = "";
-};
-/**
- * @fn toHTML
- * @memberof DOCJS.Page
- * @brief Returns the page content in HTML format.
- * @return string
- */
-DOCJS.Page.prototype.toHTML = function(){
-  return (this.content
-	  .replace(/\@section\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h1 id=\""+$1+"\">"+$2+"</h1>";})
-	  .replace(/\@subsection\s+([\w_]+)\s+([^\n]+)/gm,function(m,$1,$2){return "<h2 id=\""+$1+"\">"+$2+"</h2>";})
-	  );
-};
-
-/**
- * @brief A representation of the main page.
- * @author schteppe
- * @class DOCJS.MainPage
- * @extends DOCJS.Page
- */
-DOCJS.MainPage = function(){
-  DOCJS.Page.call( this );
-};
-DOCJS.MainPage.prototype = new DOCJS.Page();
-
-/**
- * @class DOCJS.Variable
- * @brief A representation of a variable.
- * @author schteppe
- */
-DOCJS.Variable = function(){
-
-  /**
-   * @property string type
-   * @memberof DOCJS.Variable
-   */
-  this.type = "";
-
-  /**
-   * @property string name
-   * @memberof DOCJS.Variable
-   */
-  this.name = "";
-
-  /**
-   * @property string brief
-   * @memberof DOCJS.Variable
-   */
-  this.brief = "";
-};
-
-/**
- * @brief A representation of a parameter.
- * @author schteppe
- * @class DOCJS.Parameter
- * @extends DOCJS.Variable
- */
-DOCJS.Parameter = function(){
-  DOCJS.Variable.call( this );
-};
-DOCJS.Parameter.prototype = new DOCJS.Variable();
-
-/**
- * @class DOCJS.ReturnValue
- * @brief Represents the return information
- * @extends DOCJS.Variable 
- */
-DOCJS.ReturnValue = function(){
-  DOCJS.Variable.call( this );
-};
-DOCJS.ReturnValue.prototype = new DOCJS.Variable();

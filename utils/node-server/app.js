@@ -24,6 +24,7 @@ app.get('/', function(req, res){
 
 app.get('/doc.js', function(req, res){
     fs.readFile(__dirname + '/../../doc.js', 'utf8', function(err, text){
+	res.setHeader('Content-Type', "text/javascript");
         res.send(text);
     });
 });
