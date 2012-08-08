@@ -16,6 +16,8 @@
 @page pageName
 @param dataType paramName [description]
 @return|returns dataType [description]
+@see infoText
+@todo [todoText]
 ```
 
 ## Doc.js comment blocks

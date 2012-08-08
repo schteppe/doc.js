@@ -209,46 +209,55 @@ DOCJS.Generate = function(urls,opt){
 		var content;
 		if(lines.length==1){ content = lines; }
 		else if(lines.length>1) content = lines.join("<br/>");
-		pages.push(new PageEntity([block],pageCommand,content));
+		entity = new PageEntity([block],pageCommand,content);
+		pages.push(entity);
 		
 	    } else if(block.classs.length){ // Class
 		// May only contain 1 @class command
-		var c = new ClassEntity([block],
-					block.classs[0],
-					block.param,
-					block.brief[0],
-					block.desc[0]);
-		classes.push(c);
-		name2class[c.getName()] = c;
+		var entity = new ClassEntity([block],
+					     block.classs[0],
+					     block.param,
+					     block.brief[0],
+					     block.desc[0]);
+		classes.push(entity);
+		name2class[entity.getName()] = entity;
 
 	    } else if(block.file.length){ // File
 
 	    } else if(block.func.length){ // Function
 		// May only contain 1 @function command
-		functions.push(new FunctionEntity([block],
-						  block.func[0],
-						  block.param,
-						  block.ret[0]));
+		entity = new FunctionEntity([block],
+					    block.func[0],
+					    block.param,
+					    block.ret[0]);
+		functions.push(entity);
 
 	    } else if(block.method.length){ // Method
-		if(block.memberof.length==1)
-		    methods.push(new MethodEntity([block],
-						  block.method[0],
-						  block.memberof[0],
-						  block.param,
-						  block.brief[0],
-						  block.ret[0]));
+		if(block.memberof.length==1){
+		    entity = new MethodEntity([block],
+					      block.method[0],
+					      block.memberof[0],
+					      block.param,
+					      block.brief[0],
+					      block.ret[0]);
+		    methods.push(entity);
+		}
 	    } else if(block.property.length){
-		properties.push(new PropertyEntity([block],
-						   block.property[0],
-						   block.memberof[0],
-						   block.brief[0],
-						   block.desc[0]));
+		entity = new PropertyEntity([block],
+					    block.property[0],
+					    block.memberof[0],
+					    block.brief[0],
+					    block.desc[0]);
+		properties.push(entity);
 	    }
 		
 	    // Check for todos
-	    if(block.todo){
-		
+	    if(block.todo.length){
+		for(var i=0; i<block.todo.length; i++){
+		    var todo = new TodoEntity([block],block.todo[i]);
+		    todos.push(todo);
+		    todo.setEntity(entity);
+		}
 	    }
 	}
 
@@ -560,33 +569,70 @@ DOCJS.Generate = function(urls,opt){
 	this.setDataType = function(n){ dataType=n; };
     }
     ReturnCommand.parse = function(block,errors){
-/*		// @return
-		var result = line.match(/@return|returns.*$/);
-		if(result){
-		    // Check ok
-		    block.ret.push(result);
-		}
-
-*/
-	return [];
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @return dataType [description]
+	     */
+	    var result = line.match(/@return[s]{0,1}\s+([^\s]*)\s*(.*){0,1}$/);
+	    if(result){
+		var dataType = result[1],
+		name = result[2],
+		desc; // optional
+		if(typeof(result[3])=="string" && result[3]!="") desc = result[2];
+		var command = new ReturnCommand(block,dataType,name,desc);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
     }
 
-    function SeeCommand(block,name){
+    function SeeCommand(block,text){
 	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getText = function(){ return text; };
+	this.setText = function(n){ text=n; };
     }
     SeeCommand.parse = function(block,errors){
-	return [];
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @see text
+	     */
+	    var result = line.match(/@see\s+(.*)$/);
+	    if(result){
+		var text = result[1];
+		var command = new SeeCommand(block,text);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
     }
 
-    function TodoCommand(block,name){
+    function TodoCommand(block,text){
 	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getText = function(){ return text; };
+	this.setText = function(n){ text=n; };
     }
     TodoCommand.parse = function(block,errors){
-	return [];
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @todo [text]
+	     */
+	    var result = line.match(/@todo(\s+(.*))$/);
+	    if(result){
+		var text = result[1];
+		var command = new TodoCommand(block,text);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
     }
 
     // Parse blocks from a file
