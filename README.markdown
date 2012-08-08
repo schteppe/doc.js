@@ -7,7 +7,6 @@
 Currently only slash-star comment blocks are supported.
 
 ### Function
-
 ```
 /**
  * @fn myFunc Description is optional.
@@ -21,7 +20,6 @@ Currently only slash-star comment blocks are supported.
 ```
 
 ### Class
-
 ```
 /**
  * @class myClass
@@ -33,7 +31,6 @@ Currently only slash-star comment blocks are supported.
 ```
 
 ### Method
-
 ```
 /**
  * @method myMethod
@@ -46,7 +43,7 @@ Currently only slash-star comment blocks are supported.
 ```
 
 ### Property
-
+Use it do document a property of your class.
 ```
 /**
  * @property int myProperty
@@ -55,20 +52,13 @@ Currently only slash-star comment blocks are supported.
  */
 ```
 
-### Page and MainPage
-Use the @mainpage to create the first page in your documentation. The @page command works in the same way, but creates a new separate page in your doc.
+### Page
+Use the @page to create a page in your documentation.
 
 ```
 /**
- * @mainpage My Personal Index Page
- *
- * @section intro_sec Introduction
- * This is the introduction.
- *
- * @section install_sec Installation
- *
- * @subsection step1 Step 1: Opening the box
- * etc...
+ * @page My Personal Index Page
+ * Everything but the page title is parsed to be the page content. Soon there will be support for some markup language here too.
  */
 ```
 

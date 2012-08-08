@@ -47,6 +47,7 @@ DOCJS.Generate = function(urls,opt){
 	    if(!lines) lines = src.split("\n");
 	}
 
+	this.filename = "";
 	this.src = src;
 	this.lineNumber = 1;
 
@@ -108,14 +109,16 @@ DOCJS.Generate = function(urls,opt){
 	Entity.call(this,file);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
-	this.name = filename;
-	this.brief = "";
     }
 
     function FunctionEntity(file,name,params,ret){
 	Entity.call(this,file);
-	this.name = name;
-	this.brief = "";
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getReturn = function(){ return ret; };
+	this.setReturn = function(r){ ret=r; };
+	this.getParam = function(i){ return params[i]; };
+	this.addParam = function(p){ params.push(p); };
     }
     
     function ClassEntity(file,name,params){
@@ -135,9 +138,15 @@ DOCJS.Generate = function(urls,opt){
     }
     
     function PageEntity(file,name,content){
+	var that = this;
 	Entity.call(this,file);
-	this.name = name;
-	this.content = content;
+	this.getName = function(){ return name; };
+	this.setName = function(n){ name=n; };
+	this.getContent = function(){ return content; };
+	this.setContent = function(c){ content=c; };
+	this.toHTML = function(){
+	    return "<div>"+that.getContent()+"</div>"; // todo
+	}
     }
 
     // Assembles Entity's out of Block's
@@ -157,15 +166,32 @@ DOCJS.Generate = function(urls,opt){
 
 	    // Find block type
 	    if(block.page.length){ // Page
+		console.log("page");
+		// May only contain 1 @page command
+		var pageCommand = block.page[0];
+		var lines = block.getUnparsedLines();
+		var content;
+		if(lines.length==1){ content = lines; }
+		else if(lines.length>1) content = lines.join("<br/>");
+		pages.push(new PageEntity([block],pageCommand.getName(),content));
 		
 	    } else if(block.classs.length){ // Class
+		console.log("class");
+		// May only contain 1 @class command
 		var classCommand = block.classs[0];
 		classes.push(new ClassEntity([block],classCommand.getName(),block.param));
 
 	    } else if(block.file.length){ // File
-		
+		console.log("file");
+
 	    } else if(block.func.length){ // Function
-		
+		console.log("func!");
+		// May only contain 1 @function command		
+		var functionCommand = block.func[0];
+		functions.push(new FunctionEntity([block],
+						  functionCommand.getName(),
+						  block.param,block.ret[0]));
+
 	    }
 	
 	    // Method - save for later
@@ -398,7 +424,7 @@ DOCJS.Generate = function(urls,opt){
 	     */
 	    var result = line.match(/@page\s+(.*)$/);
 	    if(result){
-		var pagename = result[0];
+		var pagename = result[1];
 		var command = new PageCommand(block,pagename);
 		block.markLineAsParsed(j);
 		commands.push(command);
@@ -518,9 +544,9 @@ DOCJS.Generate = function(urls,opt){
 		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
 
 	    // Create block
-	    var block = new Block(blocks[i]);
+	    var block = new Block(lines.join("\n"));
 	    block.lineNumber = lineNumber;
-	    block.file = file;
+	    block.filename = file;
 	    var errors = [];
 
 	    // Parse commands from block
@@ -539,13 +565,14 @@ DOCJS.Generate = function(urls,opt){
 	    block.see =      SeeCommand.parse(block,errors);
 	    block.todo =     TodoCommand.parse(block,errors);
 	    block.desc =     DescriptionCommand.parse(block,errors);
-	    
+
 	    blockObjects.push(block);
 	} 
 	return blockObjects;
     };
 
     function updateHTML(entities){
+	console.log(entities);
 	var classes = entities.classes,
 	files = entities.files,
 	pages = entities.pages,
@@ -609,8 +636,12 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<pages.length; i++){
 		var page = pages[i];
-		contents.push("<section id=\"pages-"+page.getName()+"\">"+page.toHTML()+"</section>");
-		links = $("<a href=\"#"+page.getName()+"\">"+page.getName()+"</a>");
+		var $sec = $("<section id=\"pages-"+page.getName()+"\"></section>")
+		    .append($("<h2>"+page.getName()+"</h2>"))
+		    .append($(page.toHTML()));
+		
+		contents.push($sec);
+		links = $("<a href=\"#pages-"+page.getName()+"\">"+page.getName()+"</a>");
 	    }
 	    createSection("pages","Pages",contents);
 	    createMenuList("Pages",links);
@@ -633,8 +664,10 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<functions.length; i++){
 		var f = functions[i];
-		contents.push("<section id=\"functions-"+f.getName()+"\">"+f.getName()+"</section>");
-		links = $("<a href=\"#"+f.getName()+"\">"+f.getName()+"</a>");
+		var $sec = $("<section id=\"functions-"+f.getName()+"\"></section>")
+		    .append($("<h2>"+f.getName()+"</h2>"));
+		contents.push($sec);
+		links = $("<a href=\"#functions-"+f.getName()+"\">"+f.getName()+"</a>");
 	    }
 	    createSection("functions","Functions",contents);
 	    createMenuList("Functions",links);
@@ -715,7 +748,7 @@ DOCJS.Generate = function(urls,opt){
 		}
 		*/
 
-		links.push($("<a href=\"#"+c.getName()+"\">"+c.getName()+"</a>"));
+		links.push($("<a href=\"#classes-"+c.getName()+"\">"+c.getName()+"</a>"));
 	    }
 	    createSection("classes","Classes",contents);
 	    createMenuList("Classes",links);
@@ -790,7 +823,8 @@ DOCJS.Generate = function(urls,opt){
 	}
 	
 	// Functions
-	var $ul = $("<ul></ul>");
+	/*
+	  var $ul = $("<ul></ul>");
 	var $details = $("<section id=\"functions\"><h1>Functions</h1></section>");
 	for(var j=0; j<functions.length; j++){
 	    var args = [];
@@ -814,14 +848,7 @@ DOCJS.Generate = function(urls,opt){
 	    }
 	    $funsec.append($params);
 	    $details.append($funsec);
-	    
-	    /*
-	    $class = $("<tr><td class=\"datatype\">"+(f.returnvalue && f.returnvalue.type.length ? datatype2link(f.returnvalue.type) : "&nbsp;")+"</td><td><a href=\"#"+f.name+"\">"+f.name+"</a> ( <span class=\"datatype\">"+args.join("</span> , <span class=\"datatype\">")+"</span> )</td>");
-	    if(j==0)
-		$ul = $("<table class=\"function_overview\"></table>");
-	    $ul.append($class);
-	    */
-
+	   
 	    // For the nav
 	    $fun = $("<li><a href=\"#"+f.name+"\">"+f.name+"</a></li>");
 	    if(j==0)
@@ -834,7 +861,8 @@ DOCJS.Generate = function(urls,opt){
 		.append($ul);
 	    $("article")
 		.append($details);
-	}	
+	}
+    */	
     }
     
     function loadBlocks(urls,callback){
