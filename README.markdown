@@ -3,6 +3,21 @@
 2. Create an HTML file that imports doc.js and runs DOCJS.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
 3. Done. Open your HTML file in your browser and view the result.
 
+## Commands
+```
+@author authorText
+@brief shortDescriptionText
+@class className [description]
+@description|desc longerDescriptionText
+@event eventName [description]
+@function|fn functionName [description]
+@memberof|memberOf className
+@method methodName [description]
+@page pageName
+@param dataType paramName [description]
+@return|returns dataType [description]
+```
+
 ## Doc.js comment blocks
 Currently only slash-star comment blocks are supported.
 

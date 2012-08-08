@@ -105,45 +105,80 @@ DOCJS.Generate = function(urls,opt){
 	this.blocks = blocks; // where it was defined
     }
 
-    function FileEntity(file,name){
+    function FileEntity(file,fileCommand){
 	Entity.call(this,file);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getName = function(){ return fileCommand.getName(); };
     }
 
-    function FunctionEntity(file,name,params,ret){
+    function FunctionEntity(file,
+			    functionCommand,
+			    paramCommands,
+			    returnCommand){
 	Entity.call(this,file);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getName = function(){ return functionCommand.getName(); };
 	this.getReturn = function(){ return ret; };
 	this.setReturn = function(r){ ret=r; };
-	this.getParam = function(i){ return params[i]; };
-	this.addParam = function(p){ params.push(p); };
+	this.numParams = function(){ return paramCommands.length; };
+	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
+	this.getParamName = function(i){ return paramCommands[i].getName(); };
+	this.addParam = function(p){ paramCommands.push(p); };
     }
-    
-    function ClassEntity(file,name,params){
-	var methods=[], properties=[];
+
+    function MethodEntity(file,
+			  methodCommand,
+			  memberofCommand,
+			  paramCommands,
+			  briefCommand,
+			  returnCommand){
 	Entity.call(this,file);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getName = function(){ return methodCommand.getName(); };
+	this.getClassName = function(){ return memberofCommand.getClassName(); };
+	this.numParams = function(){ return paramCommands.length; };
+	this.getBrief = function(){ return briefCommand.getContent(); };
+	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
+    }
 
-	this.addMethod = function(m){ methods.push(m); };
-	this.getMethod = function(i){ return methods[i]; };
-	this.numMethods = function(){ return methods.length; };
-
-	this.addProperty = function(m){ properties.push(m); };
-	this.getProperty = function(i){ return properties[i]; };
-	this.numProperties = function(){ return properties.length; };
-	this.brief = "";
+    function PropertyEntity(file,
+			    propertyCommand,
+			    memberofCommand,
+			    briefCommand,
+			    descriptionCommand){
+	Entity.call(this,file);
+	this.getName = function(){ return propertyCommand.getName(); };
+	this.getClassName = function(){ return memberofCommand.getClassName(); };
+	this.getDataType = function(){ return propertyCommand.getDataType(); };
+	this.getBrief = function(){ return briefCommand.getContent(); };
     }
     
-    function PageEntity(file,name,content){
+    function ClassEntity(file,
+			 classCommand,
+			 paramCommands,
+			 briefCommand,
+			 descriptionCommand){
+	if(!(briefCommand instanceof BriefCommand) && !(typeof briefCommand!="undefined"))
+	    throw new Error("Arg4 must be BriefCommand");
+	var methodEntities = [];
+	var propertyEntities = [];
+	Entity.call(this,file);
+	this.getName = function(){ return classCommand.getName(); };
+
+	this.numMethods = function(){ return methodEntities.length; };
+	this.addMethod = function(m){ methodEntities.push(m); };
+	this.getMethod = function(i){ return methodEntities[i]; };
+
+	this.numProperties = function(){ return propertyEntities.length; };
+	this.addProperty = function(m){ propertyEntities.push(m); };
+	this.getPropertyName = function(i){ return propertyEntities[i].getName(); };
+	this.getPropertyDataType = function(i){ return propertyEntities[i].getDataType(); };
+	this.getPropertyBrief = function(i){ return propertyEntities[i].getBrief(); };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
+    }
+    
+    function PageEntity(file,pageCommand,content){
 	var that = this;
 	Entity.call(this,file);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
-	this.setContent = function(c){ content=c; };
 	this.toHTML = function(){
 	    return "<div>"+that.getContent()+"</div>"; // todo
 	}
@@ -157,51 +192,60 @@ DOCJS.Generate = function(urls,opt){
 	files = [],
 	functions=[],
 	todos=[],
-	errors=[];
+	errors=[],
+	methods = [],
+	properties = [],
+	name2class={};
 
 	// Assemble Entities
-	var methods = [], properties = [];
 	for(var i=0; i<blocks.length; i++){
 	    var entity, block = blocks[i];
 
 	    // Find block type
 	    if(block.page.length){ // Page
-		console.log("page");
 		// May only contain 1 @page command
 		var pageCommand = block.page[0];
 		var lines = block.getUnparsedLines();
 		var content;
 		if(lines.length==1){ content = lines; }
 		else if(lines.length>1) content = lines.join("<br/>");
-		pages.push(new PageEntity([block],pageCommand.getName(),content));
+		pages.push(new PageEntity([block],pageCommand,content));
 		
 	    } else if(block.classs.length){ // Class
-		console.log("class");
 		// May only contain 1 @class command
-		var classCommand = block.classs[0];
-		classes.push(new ClassEntity([block],classCommand.getName(),block.param));
+		var c = new ClassEntity([block],
+					block.classs[0],
+					block.param,
+					block.brief[0],
+					block.desc[0]);
+		classes.push(c);
+		name2class[c.getName()] = c;
 
 	    } else if(block.file.length){ // File
-		console.log("file");
 
 	    } else if(block.func.length){ // Function
-		console.log("func!");
-		// May only contain 1 @function command		
-		var functionCommand = block.func[0];
+		// May only contain 1 @function command
 		functions.push(new FunctionEntity([block],
-						  functionCommand.getName(),
-						  block.param,block.ret[0]));
+						  block.func[0],
+						  block.param,
+						  block.ret[0]));
 
+	    } else if(block.method.length){ // Method
+		if(block.memberof.length==1)
+		    methods.push(new MethodEntity([block],
+						  block.method[0],
+						  block.memberof[0],
+						  block.param,
+						  block.brief[0],
+						  block.ret[0]));
+	    } else if(block.property.length){
+		properties.push(new PropertyEntity([block],
+						   block.property[0],
+						   block.memberof[0],
+						   block.brief[0],
+						   block.desc[0]));
 	    }
-	
-	    // Method - save for later
-	    for(var j=0; j<block.method.length; j++)
-		methods.push(block.method[j]);
-	    
-	    // Property - save for later
-	    for(var j=0; j<block.property.length; j++)
-		properties.push(block.property[j]);
-
+		
 	    // Check for todos
 	    if(block.todo){
 		
@@ -209,7 +253,16 @@ DOCJS.Generate = function(urls,opt){
 	}
 
 	// Attach methods, properties to their classes
-	
+	for(var i=0; i<methods.length; i++){
+	    var m = methods[i];
+	    var c = name2class[m.getClassName()];
+	    c.addMethod(m);
+	}
+	for(var i=0; i<properties.length; i++){
+	    var p = properties[i];
+	    var c = name2class[p.getClassName()];
+	    c.addProperty(p);
+	}
 
 	return {
 	    pages : pages,
@@ -401,7 +454,7 @@ DOCJS.Generate = function(urls,opt){
 	     */
 	    var result = line.match(/@method\s+([^\s]*)/);
 	    if(result){
-		var methodname = result[0];
+		var methodname = result[1];
 		var command = new MethodCommand(block,methodname);
 		block.markLineAsParsed(j);
 		commands.push(command);
@@ -463,13 +516,31 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function PropertyCommand(block,name){
+    function PropertyCommand(block,datatype,name,desc){
 	Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
+	this.getDataType = function(){ return datatype; };
     }
     PropertyCommand.parse = function(block,errors){
-	return [];
+	var commands = [], lines = block.getUnparsedLines();
+	for(var j=0; j<lines.length; j++){
+	    var line = lines[j];
+	    /**
+	     * @property dataType name [description]
+	     */
+	    var result = line.match(/@property\s+([^\s]*)\s+([^\s]*)\s*(.*){0,1}$/);
+	    if(result){
+		var dataType = result[1],
+		name = result[2],
+		desc; // optional
+		if(typeof(result[3])=="string" && result[3]!="") desc = result[2];
+		var command = new PropertyCommand(block,dataType,name,desc);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
     }
 
     function PrototypeCommand(block,name){
@@ -481,10 +552,10 @@ DOCJS.Generate = function(urls,opt){
 	return [];
     }
 
-    function ReturnCommand(block,dataType,name){
+    function ReturnCommand(block,dataType,description){
 	Command.call(this,block);
-	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
+	this.getDescription = function(){ return description; };
+	this.setDescription = function(n){ description=n; };
 	this.getDataType = function(){ return dataType; };
 	this.setDataType = function(n){ dataType=n; };
     }
@@ -521,10 +592,6 @@ DOCJS.Generate = function(urls,opt){
     // Parse blocks from a file
     function parseBlocks(src,file){
 	var blockObjects = [];
-	// Get doc blocks a la doxygen, eg:
-	/**
-	 * Something like this!
-	 */
 	// (.(?!\*\/))* is negative lookahead, anything not followed by */
 	var blocks = src.match(/\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];
 	for(var i=0; i<blocks.length; i++){
@@ -572,7 +639,6 @@ DOCJS.Generate = function(urls,opt){
     };
 
     function updateHTML(entities){
-	console.log(entities);
 	var classes = entities.classes,
 	files = entities.files,
 	pages = entities.pages,
@@ -645,18 +711,6 @@ DOCJS.Generate = function(urls,opt){
 	    }
 	    createSection("pages","Pages",contents);
 	    createMenuList("Pages",links);
-
-	    /*
-	    $("nav").append("<h2>Pages</h2>");
-	    $("article").append($("<section id=\"pages\"><h1>Pages</h1></section>"));
-	    for(var i=0; i<pages.length; i++){
-		var page = pages[i];
-		$("nav")
-		    .append("<ul><li><a href=\"#"+page.name+"\">"+page.getName()+"</a></li></ul>");
-		$("#pages")
-		    .append("<div id=\""+page.name+"\" class=\"page\">"+page.toHTML()+"</div>");
-	    }
-	    */
 	}
 
 	// Functions
@@ -695,14 +749,14 @@ DOCJS.Generate = function(urls,opt){
 		    for(var k=0; k<numMethods; k++){
 			var method = c.getMethod(k);
 			var params = [];
-			for(var k=0; k<method.numParameters(); k++){
+			for(var k=0; k<method.numParams(); k++){
 			    var param = method.getParameter(k);
-			    params.push("<span class=\"datatype\">"+"type"+"</span>" + " " + param.getName());
+			    params.push("<span class=\"datatype\">"+param.getDataType()+"</span>" + " " + param.getName());
 			}
 			$methods
-			    .append($("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>"
-				      + m.name + " ( " +params.join(" , ")+ " )</td></tr>"))
-			    .append($("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>"));
+			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
+				      + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>"))
+			    .append($("<tr><td></td><td class=\"brief\">"+method.getBrief()+"</td></tr>"));
 			/*
 			  if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
 			  $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
@@ -717,109 +771,15 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($("<h3>Properties</h3>"));
 		    var $properties = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<numProperties; k++){
-			var p = c.getProperty(k);
-			$properties.append("<tr><td class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
+			$properties.append("<tr><td class=\"datatype\">"+(c.getPropertyDataType(k))+"</td><td>" + c.getPropertyName(k) + "</td><td class=\"brief\">"+c.getPropertyBrief(k)+"</td></tr>");
 		    }
 		    $sec.append($properties);
 		}
-
 		contents.push($sec);
-		/*
-		var $methods = $("<table></table>")
-		    .addClass("member_overview")
-		    .append("<tr><td class=\"datatype\">&nbsp;</td><td>" + c.getName() + " ( " + args.join(" , ") + " )</td></tr>");
-		
-		// Methods
-		for(var k=0; k<c.numMethods(); k++){
-		    var m = c.getMethod(k);
-		    if(m.memberof==c.name){
-			
-			var margs = [];
-			for(var k in m.parameters)
-			    margs.push("<span class=\"datatype\">"+datatype2link(m.parameters[k].type)+"</span>" + " " + m.parameters[k].name);
-
-			$methods
-			    .append("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
-			    .append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
-			
-			if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
-			    $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
-		    }
-		}
-		*/
-
 		links.push($("<a href=\"#classes-"+c.getName()+"\">"+c.getName()+"</a>"));
 	    }
 	    createSection("classes","Classes",contents);
 	    createMenuList("Classes",links);
-
-	    /*
-	    var $ul = $("<ul></ul>");
-	    var $details = $("<section id=\"classes\"><h1>Classes</h1></section>");
-	    for(var j=0; j<classes.length; j++){
-		var args = [], c = classes[j];
-		$class_sec = $("<section id=\""+c.getName()+"\"></section>");
-		for(var k in c.parameters){
-		    args.push("<span class=\"datatype\">"+datatype2link(c.parameters[k].type)+"</span>" + " " + c.parameters[k].name);
-		}
-		var sign = c.getName();
-		$class_sec
-		    .append("<h2>"+c.getName()+"</h2>")
-		    .append("<p>"+c.brief+"</p>");
-		
-		// Methods
-		var $methods = $("<table></table>").addClass("member_overview");
-		$methods.append("<tr><td class=\"datatype\">&nbsp;</td><td>" + c.getName() + " ( " + args.join(" , ") + " )</td></tr>");
-		
-		// Methods
-		for(var k=0; k<c.numMethods(); k++){
-		    var m = c.getMethod(k);
-		    if(m.memberof==c.name){
-			
-			var margs = [];
-			for(var k in m.parameters)
-			    margs.push("<span class=\"datatype\">"+datatype2link(m.parameters[k].type)+"</span>" + " " + m.parameters[k].name);
-
-			$methods
-			    .append("<tr><td class=\"datatype\">"+(m.returnvalue ? datatype2link(m.returnvalue.type) : "&nbsp;")+"</td><td>" + m.name + " ( " +margs.join(" , ")+ " )</td></tr>")
-			    .append("<tr><td></td><td class=\"brief\">"+m.brief+"</td></tr>");
-			
-			if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
-			    $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
-		    }
-		}
-		
-		// Properties
-		var np=0, $properties = $("<table></table>").addClass("member_overview");
-		for(var k=0; k<c.numProperties(); k++){
-		    var p = c.getProperty(k);
-		    if(p.memberof==c.name){
-			$properties.append("<tr><td class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+"</td><td>" + p.name + "</td><td class=\"brief\">"+p.brief+"</td></tr>");
-			np++;
-		    }
-		}
-		
-		$class_sec
-		    .append("<h3>Public member functions</h3>")
-		    .append($methods);
-		if(np){
-		    $class_sec
-			.append("<h3>Properties</h3>")
-			.append($properties);
-		}
-
-		$details.append($class_sec);
-
-		$class = $("<li><a href=\"#"+c.name+"\">"+sign+"</a></li>");
-		if(j==0)
-		    $ul = $("<ul class=\"class_overview\"></ul>");
-		$ul.append($class);
-	    }
-	    $classes = $("<div><h2>Classes</h2></div>")
-		.append($ul);
-	    $("nav").append($classes);
-	    $("article").append($details);
-	    */
 	}
 	
 	// Functions
