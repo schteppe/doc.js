@@ -16,6 +16,11 @@ DOCJS.Generate = function(urls,opt){
 	updateHTML(entities);
     });
 
+    var idCount = 0;
+    function newId(){
+	return ++idCount;
+    }
+
     function setupLayout(){
 	// Setup basic page layout
 	$("body")
@@ -116,6 +121,7 @@ DOCJS.Generate = function(urls,opt){
 	this.lineNumber = lineNumber;
 	this.file = filename;
 	this.message = message;
+	this.id = newId();
     }
 
     // An Entity is a set of Command's
@@ -311,7 +317,7 @@ DOCJS.Generate = function(urls,opt){
 	    var c = name2class[m.getClassName()];
 	    if(c) c.addMethod(m);
 	    else {
-		errors.push(new ErrorReport("",1,m.getClassName()+" did not match any class..."));
+		errors.push(new ErrorReport("",1,"Could not add method "+m.getName()+" to the class "+m.getClassName()+", could not find that class."));
 	    }
 	}
 	for(var i=0; i<properties.length; i++){
@@ -735,7 +741,7 @@ DOCJS.Generate = function(urls,opt){
 	    block.desc =     DescriptionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
-	    console.log(block.getUnparsedLines().join("\n"));
+	    //console.log(block.getUnparsedLines().join("\n"));
 	} 
 	return blockObjects;
     };
@@ -926,6 +932,21 @@ DOCJS.Generate = function(urls,opt){
 		.append($details);
 	}
     */	
+
+	// Errors
+	if(errors.length > 0){
+	    var links = [], contents = [];
+	    for(var i=0; i<errors.length; i++){
+		var error = errors[i];
+		var $sec = $("<section id=\"errors-"+error.id+"\"></section>")
+		    .append($("<h2>Error "+error.id+"</h2>"))
+		    .append($("<pre>"+error.message+"</pre>"));
+		contents.push($sec);
+		links.push($("<a href=\"#errors-"+error.id+"\">Error "+error.id+"</a>"));
+	    }
+	    createSection("errors","Errors",contents);
+	    createMenuList("Errors",links);
+	}
     }
     
     function loadBlocks(urls,callback){
