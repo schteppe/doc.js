@@ -1,8 +1,35 @@
-# Doc.js usage
-1. Document your code using the comment blocks specified below.
-2. Create an HTML file that imports doc.js and runs ```DOCJS.Generate(["file1.js","file2.js",...])```.
-4. Optional: Add some CSS.
-3. Open your HTML file in your browser and view the result.
+# Doc.js
+## Example usage
+Let's say you have the following javascript code:
+
+```javascript
+/**
+ * @function add
+ * @param float a
+ * @param float b
+ * @return float
+ */
+function add(a,b){
+  return a+b;
+}
+```
+
+To make a live doc.js documentation site, add doc.js and this HTML file to a public folder:
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="doc.js"></script>
+    <script>
+      DOCJS.Generate(["myfile.js"]);
+    </script>
+  </body>
+</html>
+```
+
+Now open that HTML file in the browser. Done!
 
 ## Commands
 ```
@@ -22,7 +49,12 @@
 ```
 
 ## Comment blocks
-Currently only slash-star comment blocks are supported.
+Currently only slash-star comment blocks are supported:
+```
+/**
+ * Example
+ */
+```
 
 ### Command combinations
 A comment block has got a set of commands. To document an entity, you must specify a valid set of commands. Using a command may require another command to make a valid block, and there are some optional commands.
