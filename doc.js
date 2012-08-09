@@ -310,9 +310,12 @@ DOCJS.Generate = function(urls,opt){
 	    var unparsed = block.getUnparsedLines2(true);
 	    var count = 0;
 	    for (var k in unparsed) {
-		if (unparsed.hasOwnProperty(k)) ++count;
+		if (unparsed.hasOwnProperty(k)){
+		    ++count;
+		    break;
+		}
 	    }
-	    if(unparsed){
+	    if(count){
 		var message = "There was unparsed code:\n\n";
 		for(var j in unparsed){
 		    message += "Line "+j+": "+unparsed[j]+"\n";
