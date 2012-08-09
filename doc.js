@@ -59,7 +59,7 @@ DOCJS.Generate = function(urls,opt){
 
 	this.filename = "";
 	this.src = src;
-	this.src = rawSrc;
+	this.rawSrc = rawSrc;
 	this.lineNumber = lineNumber;
 
 	this.author = [];   // @author
@@ -121,8 +121,11 @@ DOCJS.Generate = function(urls,opt){
 	// get line of first string match
 	this.getLineNumber = function(s){
 	    var idx = that.src.indexOf(s);
-	    var lineNumber = (that.src.substr(0,idx).match(/\n/g)||[]).length + 1;
-	    return lineNumber;
+	    if(idx!=-1){
+		var lineNumber = (that.src.substr(0,idx).match(/\n/g)||[]).length;
+		return lineNumber;
+	    } else
+		return false;
 	}
     }
 
@@ -253,8 +256,14 @@ DOCJS.Generate = function(urls,opt){
 	    if(block.page.length){ // Page
 		// May only contain 1 @page command
 		var pageCommand = block.page[0];
-		var lines = block.getUnparsedLines();
-		var content = lines.join("<br/>");
+		var lines = block.getUnparsedLines2();
+		var lines_array = [];
+		for(var lineNumber in lines){
+		    var line = lines[lineNumber];
+		    lines_array.push(line);
+		    block.markLineAsParsed(lineNumber);
+		}
+		var content = lines_array.join("<br/>");
 		entity = new PageEntity([block],pageCommand,content);
 		pages.push(entity);
 		
@@ -438,10 +447,12 @@ DOCJS.Generate = function(urls,opt){
 	if(result.length>=4 && result[4]!=""){
 	    var content = result[4];
 	    var command = new DescriptionCommand(block,content);
-	    var s = content.split(/\n/);
-	    var nlines = s.length;
+	    var contentLines = content.split("\n");
+	    for(var i=0; i<contentLines.length; i++){
+		var n = block.getLineNumber(contentLines[i]);
+		block.markLineAsParsed(n);
+	    }
 	    commands.push(command);
-	    // @todo mark lines as parsed???
 	}
 	return commands;
     }
