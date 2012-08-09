@@ -19,6 +19,10 @@ To make a live doc.js documentation site, add doc.js and this HTML file to a pub
 ```html
 <!DOCTYPE html>
 <html>
+  <head>
+    <link rel="stylesheet" href="theme.css"/>
+  </head>
+  </head>
   <body>
     <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="doc.js"></script>
