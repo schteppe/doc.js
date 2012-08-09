@@ -133,7 +133,11 @@ DOCJS.Generate = function(urls,opt){
 	Entity.call(this,file);
 	this.getName = function(){ return methodCommand.getName(); };
 	this.getClassName = function(){ return memberofCommand.getClassName(); };
+
 	this.numParams = function(){ return paramCommands.length; };
+	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
+	this.getParamName = function(i){ return paramCommands[i].getName(); };
+
 	this.getBrief = function(){ return briefCommand.getContent(); };
 	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
     }
@@ -265,6 +269,7 @@ DOCJS.Generate = function(urls,opt){
 	for(var i=0; i<methods.length; i++){
 	    var m = methods[i];
 	    var c = name2class[m.getClassName()];
+	    console.log(c);
 	    c.addMethod(m);
 	}
 	for(var i=0; i<properties.length; i++){
@@ -511,12 +516,13 @@ DOCJS.Generate = function(urls,opt){
 	    /**
 	     * @param dataType paramName [paramDescription]
 	     */
-	    var result = line.match(/@param\s+([^\s]*)\s+([^\s]*)\s+(.*)$/);
+	    var result = line.match(/@param\s+([^\s]*)\s+([^\s]*)(\s+(.*)){0,1}$/);
 	    if(result){
-		var dataType = result[0],
-		paramName = result[1],
+		console.log(result);
+		var dataType = result[1],
+		paramName = result[2],
 		desc;
-		if(typeof(result[2])=="string" && result[2]!="") desc = result[2];
+		if(typeof(result[4])=="string" && result[4]!="") desc = result[4];
 		var command = new ParamCommand(block,dataType,paramName,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
@@ -790,14 +796,13 @@ DOCJS.Generate = function(urls,opt){
 		var numMethods = c.numMethods();
 		if(numMethods>0){
 		    $sec.append($("<h3>Methods</h3>"));
-		    var $methods = $("<table></table>")
-			.addClass("member_overview");
+		    var $methods = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<numMethods; k++){
 			var method = c.getMethod(k);
 			var params = [];
+			console.log(method.numParams());
 			for(var k=0; k<method.numParams(); k++){
-			    var param = method.getParameter(k);
-			    params.push("<span class=\"datatype\">"+param.getDataType()+"</span>" + " " + param.getName());
+			    params.push("<span class=\"datatype\">"+method.getParamDataType(k)+"</span>" + " " + method.getParamName(k));
 			}
 			$methods
 			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"

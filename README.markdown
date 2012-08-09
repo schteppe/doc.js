@@ -60,10 +60,11 @@ Currently only slash-star comment blocks are supported:
 A comment block has got a set of commands. To document an entity, you must specify a valid set of commands. Using a command may require another command to make a valid block, and there are some optional commands.
 ```
 Command      Requires    Optional 
-@class                   @author @brief @description @event @param         @see @todo
-@function                @author @brief @description        @param @return @see @todo
-@method      @memberof   @author @brief @description        @param @return @see @todo
-@property    @memberof   @author @brief @description                       @see @todo
+@class                   @author* @brief @description @event* @param*         @see* @todo*
+@function                @author* @brief @description         @param* @return @see* @todo*
+@method      @memberof   @author* @brief @description         @param* @return @see* @todo*
+@property    @memberof   @author* @brief @description                         @see* @todo*
+* = May be specified more than once in the same block.
 ```
 ### Examples
 #### Function
