@@ -1,7 +1,8 @@
 # Doc.js usage
-1. Document your code using Doc.js comment blocks.
-2. Create an HTML file that imports doc.js and runs DOCJS.Generate(["file1.js","file2.js",...]). Add some CSS while you're at it, or use a CSS template.
-3. Done. Open your HTML file in your browser and view the result.
+1. Document your code using the comment blocks specified below.
+2. Create an HTML file that imports doc.js and runs ```DOCJS.Generate(["file1.js","file2.js",...])```.
+4. Optional: Add some CSS.
+3. Open your HTML file in your browser and view the result.
 
 ## Commands
 ```
@@ -20,10 +21,20 @@
 @todo [todoText]
 ```
 
-## Doc.js comment blocks
+## Comment blocks
 Currently only slash-star comment blocks are supported.
 
-### Function
+### Command combinations
+A comment block has got a set of commands. To document an entity, you must specify a valid set of commands. Using a command may require another command to make a valid block, and there are some optional commands.
+```
+Command      Requires    Optional 
+@class                   @author @brief @description @event @param         @see @todo
+@function                @author @brief @description        @param @return @see @todo
+@method      @memberof   @author @brief @description        @param @return @see @todo
+@property    @memberof   @author @brief @description                       @see @todo
+```
+### Examples
+#### Function
 ```
 /**
  * @fn myFunc Description is optional.
@@ -36,7 +47,7 @@ Currently only slash-star comment blocks are supported.
  */
 ```
 
-### Class
+#### Class
 ```
 /**
  * @class myClass
@@ -47,7 +58,7 @@ Currently only slash-star comment blocks are supported.
  */
 ```
 
-### Method
+#### Method
 ```
 /**
  * @method myMethod
@@ -59,7 +70,7 @@ Currently only slash-star comment blocks are supported.
  */
 ```
 
-### Property
+#### Property
 Use it do document a property of your class.
 ```
 /**
@@ -69,20 +80,19 @@ Use it do document a property of your class.
  */
 ```
 
-### Page
+#### Page
 Use the @page to create a page in your documentation.
 
 ```
 /**
  * @page My Personal Index Page
- * Everything but the page title is parsed to be the page content. Soon there will be support for some markup language here too.
+ * Everything but the page title is parsed to be the page content. Soon
+ * there will be support for some markup language here too.
  */
 ```
 
-## How it works
-* Doc.js loads live source files via AJAX, and produces a neat documentation site by parsing comment blocks.
-* Comment blocks are similar to the [Doxygen command specifications](http://www.stack.nl/~dimitri/doxygen/commands.html)
-* Doc.js is STUPID. It does not know a thing about the language it is parsing. As long as the input contains comment blocks, Doc.js is happy. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation softwares needs.
+## Doc.js is stupid
+Doc.js does not know a thing about the language it is parsing. Therefore, it cannot autogenerate documentation from your raw code. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation systems (e.g. Doxygen).
 
 ## Todo
 * <code>@deprecated</code> and deprecated list
