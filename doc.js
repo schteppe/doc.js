@@ -47,6 +47,10 @@ DOCJS.Generate = function(urls,opt){
     // A comment block in the code.
     function Block(src,rawSrc,lineNumber){
 
+	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
+	var idx = rawSrc.indexOf(src);
+	this.rawDiff = (rawSrc.substr(0,idx).match(/\n/g)||[]).length;
+
 	var lines, parsedLines = [], that=this;
 	function splitLines(){
 	    if(!lines) lines = src.split("\n");
@@ -74,10 +78,11 @@ DOCJS.Generate = function(urls,opt){
 	this.see = [];      // @see
 	this.todo = [];     // @todo
 
+	this.localToGlobalLineNumber = function(lineNumber){
+	    return lineNumber + that.lineNumber + that.rawDiff + 1;
+	};
 	this.markLineAsParsed = function(lineNumber){
 	    if(!that.lineIsParsed(lineNumber)){
-		if(that.getLine(lineNumber).match(/myConstructorPara/))
-		    console.log("parsed");
 		parsedLines.push(lineNumber);
 	    }
 	};
@@ -101,11 +106,15 @@ DOCJS.Generate = function(urls,opt){
 	    return unparsed;
 	};
 	// Get object: linenumber => line
-	this.getUnparsedLines2 = function(){
+	this.getUnparsedLines2 = function(globalLineNumbers){
 	    var unparsed = {}, n = that.getNumLines();
 	    for(var i=0; i<n; i++){
-		if(!that.lineIsParsed(i))
-		    unparsed[i] = that.getLine(i);
+		if(!that.lineIsParsed(i)){
+		    if(globalLineNumbers)
+			unparsed[that.localToGlobalLineNumber(i)] = that.getLine(i);
+		    else
+			unparsed[i] = that.getLine(i);			
+		}
 	    }
 	    return unparsed;
 	};
@@ -288,23 +297,24 @@ DOCJS.Generate = function(urls,opt){
 		
 	    // Check for todos
 	    if(block.todo.length){
-		for(var i=0; i<block.todo.length; i++){
-		    var todo = new TodoEntity([block],block.todo[i]);
+		for(var j=0; j<block.todo.length; j++){
+		    var todo = new TodoEntity([block],block.todo[j]);
 		    todos.push(todo);
 		    todo.setEntity(entity);
 		}
 	    }
 
 	    // Make error for unparsed code
-	    var unparsed = block.getUnparsedLines2();
+	    var unparsed = block.getUnparsedLines2(true);
 	    var count = 0;
 	    for (var k in unparsed) {
 		if (unparsed.hasOwnProperty(k)) ++count;
 	    }
 	    if(unparsed){
 		var message = "There was unparsed code:\n\n";
-		for(var i in unparsed)
-		    message += "Line "+i+": "+unparsed[i]+"\n";
+		for(var j in unparsed){
+		    message += "Line "+j+": "+unparsed[j]+"\n";
+		}
 		errors.push(new ErrorReport(block.filename,
 					    block.lineNumber,
 					    message));
@@ -460,6 +470,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function FunctionCommand(block,name,description){
+	if(typeof(name)!="string") throw new Error("Argument 2 must be string, "+typeof(name)+" given");
 	Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
@@ -473,11 +484,11 @@ DOCJS.Generate = function(urls,opt){
 	    /**
 	     * @[function|fn] name [description]
 	     */
-	    var result = line.match(/@function|fn\s+([^\s]*)(\s+(.*)){0,1}$/);
+	    var result = line.match(/((@function)|(@fn))\s+([^\s]+)(\s+(.*))?/);
 	    if(result){
-		var name = result[1];
+		var name = result[4];
 		var desc;
-		if(result.length>=3) desc = result[3];
+		if(result.length>=6) desc = result[6];
 		var command = new FunctionCommand(block,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
@@ -719,7 +730,7 @@ DOCJS.Generate = function(urls,opt){
 		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
 
 	    // Create block
-	    var block = new Block(lines.join("\n"),raw,lineNumber);
+	    var block = new Block(lines.join("\n").replace(/[\n\s\t]*$/,""),raw,lineNumber);
 	    block.filename = file;
 	    var errors = [];
 
@@ -741,7 +752,6 @@ DOCJS.Generate = function(urls,opt){
 	    block.desc =     DescriptionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
-	    //console.log(block.getUnparsedLines().join("\n"));
 	} 
 	return blockObjects;
     };
@@ -753,7 +763,6 @@ DOCJS.Generate = function(urls,opt){
 	functions = entities.functions,
 	errors = entities.errors,
 	todos = entities.todos;
-	console.log(errors);
 
 	var name2class = {};
 
