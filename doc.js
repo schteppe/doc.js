@@ -288,18 +288,39 @@ DOCJS.Generate = function(urls,opt){
 		    todo.setEntity(entity);
 		}
 	    }
+
+	    // Make error for unparsed code
+	    var unparsed = block.getUnparsedLines2();
+	    var count = 0;
+	    for (var k in unparsed) {
+		if (unparsed.hasOwnProperty(k)) ++count;
+	    }
+	    if(unparsed){
+		var message = "There was unparsed code:\n\n";
+		for(var i in unparsed)
+		    message += "Line "+i+": "+unparsed[i]+"\n";
+		errors.push(new ErrorReport(block.filename,
+					    block.lineNumber,
+					    message));
+	    }
 	}
 
 	// Attach methods, properties to their classes
 	for(var i=0; i<methods.length; i++){
 	    var m = methods[i];
 	    var c = name2class[m.getClassName()];
-	    c.addMethod(m);
+	    if(c) c.addMethod(m);
+	    else {
+		errors.push(new ErrorReport("",1,m.getClassName()+" did not match any class..."));
+	    }
 	}
 	for(var i=0; i<properties.length; i++){
 	    var p = properties[i];
 	    var c = name2class[p.getClassName()];
-	    c.addProperty(p);
+	    if(c) c.addProperty(p);
+	    else errors.push(new ErrorReport("",
+					     p.blocks[0].lineNumber,
+					     "Could not attach property "+p.getName()+" to the class "+p.getClassName()+" because it could not be found."));
 	}
 
 	return {
@@ -726,6 +747,7 @@ DOCJS.Generate = function(urls,opt){
 	functions = entities.functions,
 	errors = entities.errors,
 	todos = entities.todos;
+	console.log(errors);
 
 	var name2class = {};
 
@@ -818,7 +840,6 @@ DOCJS.Generate = function(urls,opt){
 
 		// Constructor
 		var args = [];
-		console.log("num params:",c.numParams());
 		for(var j=0; j<c.numParams(); j++)
 		    args.push("<span class=\"datatype\">"+c.getParamDataType(j)+"</span> " + c.getParamName(j));
 		$sec.append($("<h3>Constructor</h3>"));
