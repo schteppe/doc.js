@@ -147,11 +147,15 @@ DOCJS.Generate = function(urls,opt){
     function FunctionEntity(file,
 			    functionCommand,
 			    paramCommands,
-			    returnCommand){
+			    returnCommand, // optional
+			    briefCommand   // optional
+			   ){
 	Entity.call(this,file);
-	this.getName = function(){ return functionCommand.getName(); };
-	this.getReturn = function(){ return ret; };
-	this.setReturn = function(r){ ret=r; };
+	this.getName = function(){ return functionCommand ? functionCommand.getName() : false; };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getName() : false; };
+
+	this.getReturnDataType = function(){ return returnCommand.getDataType(); };
+
 	this.numParams = function(){ return paramCommands.length; };
 	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
 	this.getParamName = function(i){ return paramCommands[i].getName(); };
@@ -838,6 +842,20 @@ DOCJS.Generate = function(urls,opt){
 		var f = functions[i];
 		var $sec = $("<section id=\"functions-"+f.getName()+"\"></section>")
 		    .append($("<h2>"+f.getName()+"</h2>"));
+
+		var params = [];
+		for(var k=0; k<f.numParams(); k++){
+		    params.push("<span class=\"datatype\">"+f.getParamDataType(k)+"</span> <span>" + f.getParamName(k) + "</span>");
+		}
+		$sec.append($("<span class=\"datatype\">"+
+			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
+			      "</span> <span>" + 
+			      f.getName() + 
+			      " ( " + params.join(" , ") + " ) </span>"))
+		if(f.getBrief())
+		    $sec.append( $("<p class=\"brief\">"+f.getBrief()+"</p>"));
+
+
 		contents.push($sec);
 		links = $("<a href=\"#functions-"+f.getName()+"\">"+f.getName()+"</a>");
 	    }
