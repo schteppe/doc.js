@@ -45,8 +45,9 @@ DOCJS.Generate = function(urls,opt){
     function fulltrim(s){ return s.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' '); }
 
     // A comment block in the code.
+    var blockIdCounter = 0;
     function Block(src,rawSrc,lineNumber){
-
+	this.id = ++blockIdCounter;
 	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
 	var idx = rawSrc.indexOf(src);
 	this.rawDiff = (rawSrc.substr(0,idx).match(/\n/g)||[]).length;
@@ -79,19 +80,18 @@ DOCJS.Generate = function(urls,opt){
 	this.todo = [];     // @todo
 
 	this.localToGlobalLineNumber = function(lineNumber){
-	    return lineNumber + that.lineNumber + that.rawDiff + 1;
+	    return parseInt(lineNumber) + that.lineNumber + that.rawDiff + 1;
 	};
 	this.markLineAsParsed = function(lineNumber){
-	    if(!that.lineIsParsed(lineNumber)){
-		parsedLines.push(lineNumber);
-	    }
+	    if(!that.lineIsParsed(lineNumber))
+		parsedLines.push(parseInt(lineNumber));
 	};
 	this.lineIsParsed = function(lineNumber){
-	    return parsedLines.indexOf(lineNumber)!=-1;
+	    return parsedLines.indexOf(parseInt(lineNumber))!==-1;
 	};
 	this.getLine = function(lineNumber){
 	    splitLines();
-	    return lines[lineNumber];
+	    return lines[parseInt(lineNumber)];
 	};
 	this.getNumLines = function(){
 	    splitLines();
@@ -254,9 +254,7 @@ DOCJS.Generate = function(urls,opt){
 		// May only contain 1 @page command
 		var pageCommand = block.page[0];
 		var lines = block.getUnparsedLines();
-		var content;
-		if(lines.length==1){ content = lines; }
-		else if(lines.length>1) content = lines.join("<br/>");
+		var content = lines.join("<br/>");
 		entity = new PageEntity([block],pageCommand,content);
 		pages.push(entity);
 		
