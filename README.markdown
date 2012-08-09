@@ -36,6 +36,7 @@ To make a live doc.js documentation site, add doc.js and this HTML file to a pub
 Now open that HTML file in the browser. Done!
 
 ## Commands
+Commands are parsed by Doc.js and they are later assembled into things in your documentation. Available commands and their usage are listed below. The ```|``` sign means "or", for example ```@function|fn``` means that ```@function``` is equivalent to ```@fn```. Things in brackets are ```[optional]```.
 ```
 @author authorText
 @brief shortDescriptionText
@@ -85,6 +86,7 @@ Command      Requires    Optional
 ```
 
 #### Class
+Use ```@class``` to describe a class and its constructor.
 ```
 /**
  * @class myClass
@@ -96,6 +98,7 @@ Command      Requires    Optional
 ```
 
 #### Method
+Use ```@method``` to describe a method belonging to a class.
 ```
 /**
  * @method myMethod
@@ -108,7 +111,7 @@ Command      Requires    Optional
 ```
 
 #### Property
-Use it do document a property of your class.
+Use ```@property``` do document a property of your class.
 ```
 /**
  * @property int myProperty
@@ -118,7 +121,7 @@ Use it do document a property of your class.
 ```
 
 #### Page
-Use the @page to create a page in your documentation.
+Use the ```@page``` to create a page in your documentation.
 
 ```
 /**
@@ -142,7 +145,7 @@ Doc.js does not know a thing about the language it is parsing. Therefore, it can
 * Whenever a known entity is mentioned in ordinary description texts, add link
 * <code>@markdown</code> for pages and examples?
 * Library version, title, description?
-* Single line code blocks e.g. /// @param int myParam
+* Single line code blocks e.g. ```/// @param int myParam```
 
 ## License (the MIT license)
 
