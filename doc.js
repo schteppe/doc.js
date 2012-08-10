@@ -11,6 +11,12 @@
  * 5. The entities are stored in a DOCJS.Documentation.
  * 6. Render to HTML.
  */
+
+/**
+ * @library doc.js
+ * @version 0.1.1
+ * @brief An on-the-fly documentation generator for javascript
+ */
 var DOCJS = {};
 
 /**
@@ -60,8 +66,8 @@ DOCJS.Generate = function(urls,opt){
 
 	// Set repos header
 	$("nav")
-	    .append("<h1>"+options.title+"</h1>")
-	    .append("<p>"+options.description+"</p>");
+	    .append("<h1 id=\"libtitle\">"+options.title+"</h1>"+"<sup id=\"libversion\"></sup>")
+	    .append("<p id=\"libdesc\">"+options.description+"</p>");
     }
 
     // Utility functions
@@ -253,6 +259,28 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
+     * @class DOCJS.LibraryEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.LibraryCommand libraryCommand
+     * @param DOCJS.VersionCommand versionCommand Optional
+     * @param DOCJS.BriefCommand briefCommand Optional
+     * @param DOCJS.DescriptionCommand descriptionCommand Optional
+     * @extends DOCJS.Entity
+     */
+    DOCJS.LibraryEntity = function(block,
+				   libraryCommand,
+				   versionCommand, // optional
+				   briefCommand,   // optional
+				   descriptionCommand // optional
+				  ){
+	DOCJS.Entity.call(this,block);
+	this.getName = function(){ return libraryCommand ? libraryCommand.getName() : false; };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
+	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
+	this.getVersion = function(){ return versionCommand ? versionCommand.getContent() : false; };
+    }
+
+    /**
      * @class DOCJS.MethodEntity
      * @param DOCJS.Block block
      * @param DOCJS.MemberofCommand memberof
@@ -386,6 +414,7 @@ DOCJS.Generate = function(urls,opt){
 	this.classes = [];
 	this.files = [];
 	this.functions = [];
+	this.library = false;
 	this.todos = [];
 	this.errors = [];
 	this.methods = [];
@@ -475,7 +504,16 @@ DOCJS.Generate = function(urls,opt){
 		doc.classes.push(entity);
 
 	    } else if(block.file.length){ // File
-		
+
+	    } else if(block.library.length){ // Library
+
+		entity = new DOCJS.LibraryEntity([block],
+						 block.library[0],
+						 block.version[0],
+						 block.brief[0],
+						 block.desc[0]);
+		doc.library = entity;
+
 	    } else if(block.func.length){ // Function
 		entity = new DOCJS.FunctionEntity([block],
 						  block.func[0],
@@ -796,6 +834,26 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
+    DOCJS.LibraryCommand = function(block,libraryName){
+	DOCJS.Command.call(this,block);
+	this.getName = function(){ return libraryName; };
+    }
+    DOCJS.LibraryCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines2();
+	for(var j in lines){
+	    var line = lines[j];
+	    // @[library|library] ClassName
+	    var result = line.match(/@library\s+(.*)$/);
+	    if(result){
+		var libname = result[1];
+		var command = new DOCJS.LibraryCommand(block,libname);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
     DOCJS.MethodCommand = function(block,name){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
@@ -973,6 +1031,27 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
+    DOCJS.VersionCommand = function(block,content){
+	DOCJS.Command.call(this,block);
+	this.getContent = function(){ return content; };
+    }
+    DOCJS.VersionCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines2();
+	for(var j in lines){
+	    var line = lines[j];
+
+	    // @version text
+	    var result = line.match(/@version\s+(.*)$/);
+	    if(result){
+		var text = result[1];
+		var command = new DOCJS.VersionCommand(block,text);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
     // Parse blocks from a file
     function parseBlocks(src,file){
 	var blockObjects = [];
@@ -1005,10 +1084,12 @@ DOCJS.Generate = function(urls,opt){
 	    block.author =   DOCJS.AuthorCommand.parse(block,errors);
 	    block.brief =    DOCJS.BriefCommand.parse(block,errors);
 	    block.classs =   DOCJS.ClassCommand.parse(block,errors);
+	    block.desc =     DOCJS.DescriptionCommand.parse(block,errors);
 	    block.event =    DOCJS.EventCommand.parse(block,errors);
 	    block.example=   DOCJS.ExampleCommand.parse(block,errors);
 	    block.extends=   DOCJS.ExtendsCommand.parse(block,errors);
 	    block.func =     DOCJS.FunctionCommand.parse(block,errors);
+	    block.library =  DOCJS.LibraryCommand.parse(block,errors);
 	    block.memberof = DOCJS.MemberofCommand.parse(block,errors);
 	    block.method =   DOCJS.MethodCommand.parse(block,errors);
 	    block.page =     DOCJS.PageCommand.parse(block,errors);
@@ -1018,7 +1099,7 @@ DOCJS.Generate = function(urls,opt){
 	    block.ret =      DOCJS.ReturnCommand.parse(block,errors);
 	    block.see =      DOCJS.SeeCommand.parse(block,errors);
 	    block.todo =     DOCJS.TodoCommand.parse(block,errors);
-	    block.desc =     DOCJS.DescriptionCommand.parse(block,errors);
+	    block.version =  DOCJS.VersionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
 	} 
@@ -1071,6 +1152,13 @@ DOCJS.Generate = function(urls,opt){
 		$li.append(items[i]);
 		$ul.append($li);
 	    }
+	}
+
+	// Library info
+	if(doc.library){
+	    $("#libtitle").html(doc.library.getName());
+	    $("#libversion").html(doc.library.getVersion());
+	    $("#libdesc").html(doc.library.getBrief());
 	}
 	
 	// Pages
