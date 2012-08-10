@@ -18,6 +18,13 @@ var DOCJS = {};
  * @param Array urls
  * @param Object opt
  * @brief Generate Doc.js documentation.
+ * @example
+ * You use the function like this:
+ * ```
+ * DOCJS.Generate(["file.js"]);
+ * ```
+ * ...and then you're done!
+ * @endexample
  */
 DOCJS.Generate = function(urls,opt){
 
@@ -93,6 +100,7 @@ DOCJS.Generate = function(urls,opt){
 	this.classs = [];   // @class
 	this.desc = [];     // @desc, @description
 	this.event = [];    // @event
+	this.example = [];  // @example
 	this.file = [];     // @file
 	this.func = [];     // @fn, @function
 	this.memberof = []; // @memberof
@@ -111,6 +119,17 @@ DOCJS.Generate = function(urls,opt){
 	this.markLineAsParsed = function(lineNumber){
 	    if(!that.lineIsParsed(lineNumber))
 		parsedLines.push(parseInt(lineNumber));
+	};
+	this.markChunkAsParsed = function(chunk){
+	    var idx = src.indexOf(chunk);
+	    if(idx != -1){
+		var start = idx;
+		var end = start+chunk.length;
+		var firstLine = (src.substring(0,start).match(/\n/gm)||[]).length;
+		var lastLine = (src.substring(start,end).match(/\n/gm)||[]).length + firstLine;
+		for(var i=firstLine; i<=lastLine; i++)
+		    that.markLineAsParsed(i+that.rawDiff);
+	    }
 	};
 	this.lineIsParsed = function(lineNumber){
 	    return parsedLines.indexOf(parseInt(lineNumber))!==-1;
@@ -204,6 +223,7 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.ReturnCommand returnCommand Optional
      * @param DOCJS.BriefCommand briefCommand Optional
      * @param DOCJS.DescriptionCommand descriptionCommand Optional
+     * @param DOCJS.ExampleCommand exampleCommand Optional
      * @extends DOCJS.Entity
      */
     DOCJS.FunctionEntity = function(block,
@@ -211,7 +231,8 @@ DOCJS.Generate = function(urls,opt){
 				    paramCommands,
 				    returnCommand, // optional
 				    briefCommand,   // optional
-				    descriptionCommand // optional
+				    descriptionCommand, // optional
+				    exampleCommand // optional
 				   ){
 	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return functionCommand ? functionCommand.getName() : false; };
@@ -226,6 +247,9 @@ DOCJS.Generate = function(urls,opt){
 	this.getParamName = function(i){ return paramCommands[i].getName(); };
 	this.getParamDescription = function(i){ return paramCommands[i].getDescription(); };
 	this.addParam = function(p){ paramCommands.push(p); };
+
+	this.numExamples = function(){ return exampleCommand ? exampleCommand.length : 0; };
+	this.getExampleText = function(i){ return exampleCommand[i].getContent(); };
     }
 
     /**
@@ -347,13 +371,6 @@ DOCJS.Generate = function(urls,opt){
 	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
-	this.toHTML = function(){
-	    if(typeof(Markdown)!="undefined"){
-		var converter = Markdown.getSanitizingConverter();
-		return converter.makeHtml(that.getContent());
-	    } else
-	    return "<div>"+that.getContent()+"</div>"; // todo
-	}
     }
 
     /**
@@ -455,15 +472,13 @@ DOCJS.Generate = function(urls,opt){
 	    } else if(block.file.length){ // File
 		
 	    } else if(block.func.length){ // Function
-		var ret = block.ret[0]; // optional
-		var brief = block.brief[0];  // optional
-		var description = block.desc[0];  // optional
 		entity = new DOCJS.FunctionEntity([block],
 						  block.func[0],
 						  block.param,
-						  ret,
-						  brief,
-						  description);
+						  block.ret[0],
+						  block.brief[0],
+						  block.desc[0],
+						  block.example);
 		doc.functions.push(entity);
 
 	    } else if(block.method.length){ // Method
@@ -674,6 +689,25 @@ DOCJS.Generate = function(urls,opt){
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
+	}
+	return commands;
+    }
+
+    DOCJS.ExampleCommand = function(block,content){
+	DOCJS.Command.call(this,block);
+	this.getContent = function(){ return content; };
+    }
+    DOCJS.ExampleCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines();
+	var src = lines.join("\n");
+	    
+	// @example formattedText @endexample
+	var result = src.match(/@example(([\s\S](?!(\\@endexample)))*)@endexample/);
+	if(result){
+	    var content = result[1];
+	    var command = new DOCJS.ExampleCommand(block,content);
+	    block.markChunkAsParsed(result[0]);
+	    commands.push(command);
 	}
 	return commands;
     }
@@ -964,6 +998,7 @@ DOCJS.Generate = function(urls,opt){
 	    block.brief =    DOCJS.BriefCommand.parse(block,errors);
 	    block.classs =   DOCJS.ClassCommand.parse(block,errors);
 	    block.event =    DOCJS.EventCommand.parse(block,errors);
+	    block.example=   DOCJS.ExampleCommand.parse(block,errors);
 	    block.extends=   DOCJS.ExtendsCommand.parse(block,errors);
 	    block.func =     DOCJS.FunctionCommand.parse(block,errors);
 	    block.memberof = DOCJS.MemberofCommand.parse(block,errors);
@@ -993,6 +1028,14 @@ DOCJS.Generate = function(urls,opt){
 		    r = "<a href=\"#classes-"+toNice(name)+"\">"+name+"</a>";
 	    }
 	    return r;
+	}
+
+	function markDown2HTML(m){
+	    if(typeof(Markdown)!="undefined"){
+		var converter = Markdown.getSanitizingConverter();
+		return converter.makeHtml(m);
+	    } else
+	    return "<div>"+m+"</div>"; // todo
 	}
 
 	// Create a section e.g. Classes, Functions, etc
@@ -1029,7 +1072,7 @@ DOCJS.Generate = function(urls,opt){
 		var page = doc.pages[i];
 		var $sec = $("<section id=\"pages-"+toNice(page.getName())+"\"></section>")
 		    .append($("<h2>"+page.getName()+"</h2>"))
-		    .append($(page.toHTML()));
+		    .append($(markDown2HTML(page.getContent())));
 		
 		contents.push($sec);
 		links = $("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>");
@@ -1083,6 +1126,14 @@ DOCJS.Generate = function(urls,opt){
 		if(f.getReturnDescription()){
 		    $sec.append($("<h3>Return value</h3>"));
 		    $sec.append("<p>"+f.getReturnDescription(k)+"</p>");
+		}
+
+		// Examples
+		if(f.numExamples()){
+		    for(var j=0; j<f.numExamples(); j++){
+			// Example
+			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(f.getExampleText(i))+"</div>"));
+		    }
 		}
 
 		contents.push($sec);
@@ -1182,8 +1233,8 @@ DOCJS.Generate = function(urls,opt){
 		    .append($("<pre>"+error.message+"</pre>"));
 		contents.push($sec);
 	    }
-	    createSection("errors","Errors ("+errors.length+")",contents);
-	    createMenuList("errors","Errors ("+errors.length+")",links);
+	    createSection("errors","Errors ("+doc.errors.length+")",contents);
+	    createMenuList("errors","Errors ("+doc.errors.length+")",links);
 	}
     }
     
