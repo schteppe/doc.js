@@ -330,7 +330,8 @@ DOCJS.Generate = function(urls,opt){
 				 paramCommands,
 				 extendsCommand, // optional
 				 briefCommand, // optional
-				 descriptionCommand){ // optional
+				 descriptionCommand, // optional
+				 exampleCommands){ // optional
 	if(!(briefCommand instanceof DOCJS.BriefCommand) && typeof(briefCommand)!="undefined"){
 	    throw new Error("Argument 4 must be BriefCommand or undefined, got "+typeof(briefCommand));
 	}
@@ -357,6 +358,9 @@ DOCJS.Generate = function(urls,opt){
 	this.getPropertyDataType = function(i){ return propertyEntities[i].getDataType(); };
 	this.getPropertyBrief = function(i){ return propertyEntities[i].getBrief(); };
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
+
+	this.numExamples = function(){ return exampleCommands ? exampleCommands.length : 0; };
+	this.getExampleText = function(i){ return exampleCommands[i].getContent(); };
     }
 
     /**
@@ -466,7 +470,8 @@ DOCJS.Generate = function(urls,opt){
 						   block.param,
 						   block.extends[0],
 						   block.brief[0],
-						   block.desc[0]);
+						   block.desc[0],
+						   block.example);
 		doc.classes.push(entity);
 
 	    } else if(block.file.length){ // File
@@ -577,6 +582,9 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.Block block
      * @param string content
      * @extends DOCJS.Command
+     * @example
+     * HEY
+     * @endexample
      */
     DOCJS.AuthorCommand = function(block,content){
 	DOCJS.Command.call(this,block);
@@ -1132,7 +1140,7 @@ DOCJS.Generate = function(urls,opt){
 		if(f.numExamples()){
 		    for(var j=0; j<f.numExamples(); j++){
 			// Example
-			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(f.getExampleText(i))+"</div>"));
+			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(f.getExampleText(j))+"</div>"));
 		    }
 		}
 
@@ -1153,7 +1161,7 @@ DOCJS.Generate = function(urls,opt){
 		var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
 		$sec.append($("<h2>"+c.getName()+"</h2>"));
 
-		// Inheritance
+		// Inheritance list
 		var extendsList = doc.getInheritanceList(c);
 		extendsList.shift();
 		if(extendsList.length >= 1){
@@ -1202,6 +1210,15 @@ DOCJS.Generate = function(urls,opt){
 		    }
 		    $sec.append($properties);
 		}
+
+		// Examples
+		if(c.numExamples()){
+		    for(var j=0; j<c.numExamples(); j++){
+			// Example
+			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>"));
+		    }
+		}
+
 		contents.push($sec);
 		links.push($("<a href=\"#classes-"+toNice(c.getName())+"\">"+c.getName()+"</a>"));
 	    }
