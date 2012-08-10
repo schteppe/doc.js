@@ -678,11 +678,11 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function ExtendsCommand(block,className){
+    DOCJS.ExtendsCommand = function(block,className){
 	DOCJS.Command.call(this,block);
 	this.getClassName = function(){ return className; };
     }
-    ExtendsCommand.parse = function(block,errors){
+    DOCJS.ExtendsCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -691,7 +691,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/@extends\s+([^\s]*)/);
 	    if(result){
 		var name = result[1];
-		var command = new ExtendsCommand(block,name);
+		var command = new DOCJS.ExtendsCommand(block,name);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -706,7 +706,7 @@ DOCJS.Generate = function(urls,opt){
      * @param string description
      * @extends DOCJS.Command
      */
-    function FunctionCommand(block,name,description){
+    DOCJS.FunctionCommand = function(block,name,description){
 	if(typeof(name)!="string") throw new Error("Argument 2 must be string, "+typeof(name)+" given");
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
@@ -714,7 +714,7 @@ DOCJS.Generate = function(urls,opt){
 	this.getDescription = function(){ return description; };
 	this.setDescription = function(n){ description=n; };
     }
-    FunctionCommand.parse = function(block,errors){
+    DOCJS.FunctionCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -725,7 +725,7 @@ DOCJS.Generate = function(urls,opt){
 		var name = result[4];
 		var desc;
 		if(result.length>=6) desc = result[6];
-		var command = new FunctionCommand(block,name,desc);
+		var command = new DOCJS.FunctionCommand(block,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -733,12 +733,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function MemberofCommand(block,className){
+    DOCJS.MemberofCommand = function(block,className){
 	DOCJS.Command.call(this,block);
 	this.getClassName = function(){ return className; };
 	this.setClassName = function(n){ className=n; };
     }
-    MemberofCommand.parse = function(block,errors){
+    DOCJS.MemberofCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -746,7 +746,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/(@memberOf)|(@memberof)\s+([^\s]*)$/);
 	    if(result && result.length>=4){
 		var classname = result[3];
-		var command = new MemberofCommand(block,classname);
+		var command = new DOCJS.MemberofCommand(block,classname);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -754,12 +754,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function MethodCommand(block,name){
+    DOCJS.MethodCommand = function(block,name){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
-    MethodCommand.parse = function(block,errors){
+    DOCJS.MethodCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -769,7 +769,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/@method\s+([^\s]*)$/);
 	    if(result){
 		var methodname = result[1];
-		var command = new MethodCommand(block,methodname);
+		var command = new DOCJS.MethodCommand(block,methodname);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -777,12 +777,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function PageCommand(block,name){
+    DOCJS.PageCommand = function(block,name){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
-    PageCommand.parse = function(block,errors){
+    DOCJS.PageCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -791,7 +791,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/@page\s+(.*)$/);
 	    if(result){
 		var pagename = result[1];
-		var command = new PageCommand(block,pagename);
+		var command = new DOCJS.PageCommand(block,pagename);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -799,13 +799,13 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function ParamCommand(block,dataType,name,description){
+    DOCJS.ParamCommand = function(block,dataType,name,description){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.getDataType = function(){ return dataType; };
 	this.getDescription = function(){ return description ? description : false; };
     }
-    ParamCommand.parse = function(block,errors){
+    DOCJS.ParamCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -817,7 +817,7 @@ DOCJS.Generate = function(urls,opt){
 		paramName = result[2],
 		desc;
 		if(typeof(result[4])=="string" && result[4]!="") desc = result[4];
-		var command = new ParamCommand(block,dataType,paramName,desc);
+		var command = new DOCJS.ParamCommand(block,dataType,paramName,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -825,13 +825,13 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function PropertyCommand(block,datatype,name,desc){
+    DOCJS.PropertyCommand = function(block,datatype,name,desc){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
 	this.getDataType = function(){ return datatype; };
     }
-    PropertyCommand.parse = function(block,errors){
+    DOCJS.PropertyCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -843,7 +843,7 @@ DOCJS.Generate = function(urls,opt){
 		name = result[2],
 		desc; // optional
 		if(typeof(result[3])=="string" && result[3]!="") desc = result[2];
-		var command = new PropertyCommand(block,dataType,name,desc);
+		var command = new DOCJS.PropertyCommand(block,dataType,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -851,23 +851,23 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function PrototypeCommand(block,name){
+    DOCJS.PrototypeCommand = function(block,name){
 	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
-    PrototypeCommand.parse = function(block,errors){
+    DOCJS.PrototypeCommand.parse = function(block,errors){
 	return [];
     }
 
-    function ReturnCommand(block,dataType,description){
+    DOCJS.ReturnCommand = function(block,dataType,description){
 	DOCJS.Command.call(this,block);
 	this.getDescription = function(){ return description; };
 	this.setDescription = function(n){ description=n; };
 	this.getDataType = function(){ return dataType; };
 	this.setDataType = function(n){ dataType=n; };
     }
-    ReturnCommand.parse = function(block,errors){
+    DOCJS.ReturnCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -879,7 +879,7 @@ DOCJS.Generate = function(urls,opt){
 		name = result[2],
 		desc; // optional
 		if(typeof(result[3])=="string" && result[3]!="") desc = result[2];
-		var command = new ReturnCommand(block,dataType,name,desc);
+		var command = new DOCJS.ReturnCommand(block,dataType,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -887,12 +887,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function SeeCommand(block,text){
+    DOCJS.SeeCommand = function(block,text){
 	DOCJS.Command.call(this,block);
 	this.getText = function(){ return text; };
 	this.setText = function(n){ text=n; };
     }
-    SeeCommand.parse = function(block,errors){
+    DOCJS.SeeCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -901,7 +901,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/@see\s+(.*)$/);
 	    if(result){
 		var text = result[1];
-		var command = new SeeCommand(block,text);
+		var command = new DOCJS.SeeCommand(block,text);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -909,12 +909,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function TodoCommand(block,content){
+    DOCJS.TodoCommand = function(block,content){
 	DOCJS.Command.call(this,block);
 	this.getContent = function(){ return content; };
 	this.setContent = function(n){ content=n; };
     }
-    TodoCommand.parse = function(block,errors){
+    DOCJS.TodoCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -923,7 +923,7 @@ DOCJS.Generate = function(urls,opt){
 	    var result = line.match(/@todo(\s+(.*))$/);
 	    if(result){
 		var text = result[1];
-		var command = new TodoCommand(block,text);
+		var command = new DOCJS.TodoCommand(block,text);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -964,17 +964,17 @@ DOCJS.Generate = function(urls,opt){
 	    block.brief =    DOCJS.BriefCommand.parse(block,errors);
 	    block.classs =   DOCJS.ClassCommand.parse(block,errors);
 	    block.event =    DOCJS.EventCommand.parse(block,errors);
-	    block.extends=   ExtendsCommand.parse(block,errors);
-	    block.func =     FunctionCommand.parse(block,errors);
-	    block.memberof = MemberofCommand.parse(block,errors);
-	    block.method =   MethodCommand.parse(block,errors);
-	    block.page =     PageCommand.parse(block,errors);
-	    block.param =    ParamCommand.parse(block,errors);
-	    block.property = PropertyCommand.parse(block,errors);
-	    block.proto =    PrototypeCommand.parse(block,errors);
-	    block.ret =      ReturnCommand.parse(block,errors);
-	    block.see =      SeeCommand.parse(block,errors);
-	    block.todo =     TodoCommand.parse(block,errors);
+	    block.extends=   DOCJS.ExtendsCommand.parse(block,errors);
+	    block.func =     DOCJS.FunctionCommand.parse(block,errors);
+	    block.memberof = DOCJS.MemberofCommand.parse(block,errors);
+	    block.method =   DOCJS.MethodCommand.parse(block,errors);
+	    block.page =     DOCJS.PageCommand.parse(block,errors);
+	    block.param =    DOCJS.ParamCommand.parse(block,errors);
+	    block.property = DOCJS.PropertyCommand.parse(block,errors);
+	    block.proto =    DOCJS.PrototypeCommand.parse(block,errors);
+	    block.ret =      DOCJS.ReturnCommand.parse(block,errors);
+	    block.see =      DOCJS.SeeCommand.parse(block,errors);
+	    block.todo =     DOCJS.TodoCommand.parse(block,errors);
 	    block.desc =     DOCJS.DescriptionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
