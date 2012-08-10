@@ -160,10 +160,12 @@ DOCJS.Generate = function(urls,opt){
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
 
 	this.getReturnDataType = function(){ return returnCommand.getDataType(); };
+	this.getReturnDescription = function(){ return returnCommand.getDescription(); };
 
 	this.numParams = function(){ return paramCommands.length; };
 	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
 	this.getParamName = function(i){ return paramCommands[i].getName(); };
+	this.getParamDescription = function(i){ return paramCommands[i].getDescription(); };
 	this.addParam = function(p){ paramCommands.push(p); };
     }
 
@@ -591,11 +593,8 @@ DOCJS.Generate = function(urls,opt){
     function ParamCommand(block,dataType,name,description){
 	Command.call(this,block);
 	this.getName = function(){ return name; };
-	this.setName = function(n){ name=n; };
 	this.getDataType = function(){ return dataType; };
-	this.setDataType = function(n){ dataType=n; };
-	this.getDescription = function(){ return description; };
-	this.setDescription = function(n){ description=n; };
+	this.getDescription = function(){ return description ? description : false; };
     }
     ParamCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
@@ -861,27 +860,44 @@ DOCJS.Generate = function(urls,opt){
 		var $sec = $("<section id=\"functions-"+f.getName()+"\"></section>")
 		    .append($("<h2>"+f.getName()+"</h2>"));
 
-		var params = [];
-		for(var k=0; k<f.numParams(); k++){
-		    params.push("<span class=\"datatype\">"+f.getParamDataType(k)+"</span> <span>" + f.getParamName(k) + "</span>");
-		}
-		// Signature
-		$sec.append($("<span class=\"datatype\">"+
-			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
-			      "</span> <span>" + 
-			      f.getName() + 
-			      " ( " + params.join(" , ") + " ) </span>"));
-		
 		// Brief
 		if(f.getBrief()){
 		    $sec.append( $("<p class=\"brief\">"+f.getBrief()+"</p>"));
 		}
 
 		// Description
+		$sec.append($("<h3>Description</h3>"));
+		var params = [];
+		for(var k=0; k<f.numParams(); k++){
+		    params.push("<span class=\"datatype\">"+f.getParamDataType(k)+"</span> <span>" + f.getParamName(k) + "</span>");
+		}
+		$sec.append($("<span class=\"datatype\">"+
+			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
+			      "</span> <span>" + 
+			      f.getName() + 
+			      " ( " + params.join(" , ") + " ) </span>"));
+		
+
+		// Description
 		if(f.getDescription()){
 		    $sec.append( $("<p class=\"description\">"+f.getDescription()+"</p>"));
 		}
 
+		// Parameters
+		if(f.numParams()>0){
+		    $sec.append($("<h3>Parameters</h3>"));
+		    var $params = $("<table></table>").addClass("member_overview");
+		    for(var k=0; k<f.numParams(); k++){
+			$params.append("<tr><td class=\"datatype\">"+(f.getParamDataType(k))+"</td><td>" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
+		    }
+		    $sec.append($params);
+		}
+
+		// Return value
+		if(f.getReturnDescription()){
+		    $sec.append($("<h3>Return value</h3>"));
+		    $sec.append("<p>"+f.getReturnDescription(k)+"</p>");
+		}
 
 		contents.push($sec);
 		links = $("<a href=\"#functions-"+f.getName()+"\">"+f.getName()+"</a>");
@@ -897,6 +913,8 @@ DOCJS.Generate = function(urls,opt){
 		var c = classes[i];
 		var $sec = $("<section id=\"classes-"+c.getName()+"\"></section>");
 		$sec.append($("<h2>"+c.getName()+"</h2>"));
+		if(c.getBrief())
+		    $sec.append($("<p>"+c.getBrief()+"</p>"));
 
 		// Constructor
 		var args = [];
