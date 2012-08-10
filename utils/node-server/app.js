@@ -29,6 +29,13 @@ app.get('/doc.js', function(req, res){
     });
 });
 
+app.get('/cannon.js', function(req, res){
+    fs.readFile(__dirname + '/../../cannon.js', 'utf8', function(err, text){
+	res.setHeader('Content-Type', "text/javascript");
+        res.send(text);
+    });
+});
+
 app.get('/libs/pagedown/Markdown.Converter.js', function(req, res){
     fs.readFile(__dirname + '/../../libs/pagedown/Markdown.Converter.js', 'utf8', function(err, text){
 	res.setHeader('Content-Type', "text/javascript");

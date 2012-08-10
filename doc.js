@@ -176,8 +176,8 @@ DOCJS.Generate = function(urls,opt){
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
 
-	this.getReturnDataType = function(){ return returnCommand.getDataType(); };
-	this.getReturnDescription = function(){ return returnCommand.getDescription(); };
+	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
+	this.getReturnDescription = function(){ return returnCommand ? returnCommand.getDescription() : false; };
 
 	this.numParams = function(){ return paramCommands.length; };
 	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
@@ -207,22 +207,32 @@ DOCJS.Generate = function(urls,opt){
     function PropertyEntity(file,
 			    propertyCommand,
 			    memberofCommand,
-			    briefCommand,
-			    descriptionCommand){
+			    briefCommand, // optional
+			    descriptionCommand // optional
+			   ){
 	Entity.call(this,file);
 	this.getName = function(){ return propertyCommand.getName(); };
 	this.getClassName = function(){ return memberofCommand.getClassName(); };
 	this.getDataType = function(){ return propertyCommand.getDataType(); };
-	this.getBrief = function(){ return briefCommand.getContent(); };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
+	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
+    }
+
+    function TodoEntity(file,todoCommand){
+	Entity.call(this,file);
+	this.getContent = function(){ return todoCommand.getContent(); };
+	this.setEntity = function(e){ entity = e; };
+	this.getLine = function(){ return todoCommand.getBlock().lineNumber; };
     }
     
     function ClassEntity(file,
 			 classCommand,
 			 paramCommands,
-			 briefCommand,
-			 descriptionCommand){
-	if(!(briefCommand instanceof BriefCommand) && !(typeof briefCommand!="undefined"))
-	    throw new Error("Arg4 must be BriefCommand");
+			 briefCommand, // optional
+			 descriptionCommand){ // optional
+	if(!(briefCommand instanceof BriefCommand) && typeof(briefCommand)!="undefined"){
+	    throw new Error("Argument 4 must be BriefCommand or undefined, got "+typeof(briefCommand));
+	}
 	var methodEntities = [];
 	var propertyEntities = [];
 	Entity.call(this,file);
@@ -327,12 +337,18 @@ DOCJS.Generate = function(urls,opt){
 		    methods.push(entity);
 		}
 	    } else if(block.property.length){
-		entity = new PropertyEntity([block],
-					    block.property[0],
-					    block.memberof[0],
-					    block.brief[0],
-					    block.desc[0]);
-		properties.push(entity);
+		if(block.memberof.length!=1)
+		    errors.push(new ErrorReport(block.filename,
+						block.lineNumber,
+						"A @property block requires exactly 1 @memberof command, got "+block.memberof.length+"."));
+		else {
+		    entity = new PropertyEntity([block],
+						block.property[0],
+						block.memberof[0],
+						block.brief[0],
+						block.desc[0]);
+		    properties.push(entity);
+		}
 	    }
 		
 	    // Check for todos
@@ -725,10 +741,10 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function TodoCommand(block,text){
+    function TodoCommand(block,content){
 	Command.call(this,block);
-	this.getText = function(){ return text; };
-	this.setText = function(n){ text=n; };
+	this.getContent = function(){ return content; };
+	this.setContent = function(n){ content=n; };
     }
     TodoCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
@@ -845,10 +861,10 @@ DOCJS.Generate = function(urls,opt){
 	}
 	
 	// Create corresp. menu list
-	function createMenuList(title,items){
+	function createMenuList(id,title,items){
 	    var $ul = $("<ul></ul>");
 	    $("nav")
-		.append("<h2>"+title+"</h2>")
+		.append("<h2><a href=\"#"+id+"\">"+title+"</a></h2>")
 		.append($ul);
 	    for(var i=0; i<items.length; i++){
 		$li = $("<li></li>");
@@ -870,7 +886,7 @@ DOCJS.Generate = function(urls,opt){
 		links = $("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>");
 	    }
 	    createSection("pages","Pages",contents);
-	    createMenuList("Pages",links);
+	    createMenuList("pages","Pages",links);
 	}
 
 	// Functions
@@ -921,10 +937,10 @@ DOCJS.Generate = function(urls,opt){
 		}
 
 		contents.push($sec);
-		links = $("<a href=\"#functions-"+toNice(f.getName())+"\">"+f.getName()+"</a>");
+		links.push($("<a href=\"#functions-"+toNice(f.getName())+"\">"+f.getName()+"</a>"));
 	    }
 	    createSection("functions","Functions",contents);
-	    createMenuList("Functions",links);
+	    createMenuList("functions","Functions",links);
 	}
 	
 	// Classes
@@ -969,7 +985,7 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($("<h3>Properties</h3>"));
 		    var $properties = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<numProperties; k++){
-			$properties.append("<tr><td class=\"datatype\">"+(c.getPropertyDataType(k))+"</td><td>" + c.getPropertyName(k) + "</td><td class=\"brief\">"+c.getPropertyBrief(k)+"</td></tr>");
+			$properties.append("<tr><td class=\"datatype\">"+(c.getPropertyDataType(k))+"</td><td>" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
 		    }
 		    $sec.append($properties);
 		}
@@ -977,7 +993,23 @@ DOCJS.Generate = function(urls,opt){
 		links.push($("<a href=\"#classes-"+toNice(c.getName())+"\">"+c.getName()+"</a>"));
 	    }
 	    createSection("classes","Classes",contents);
-	    createMenuList("Classes",links);
+	    createMenuList("classes","Classes",links);
+	}
+
+	// Todos
+	if(todos.length > 0){
+	    var links = [], contents = [];
+	    for(var i=0; i<todos.length; i++){
+		var todo = todos[i];
+		var $sec = $("<div id=\"todos-"+todo.id+"\"></div>")
+		    .append($("<h2>Line "+todo.getLine()+"</h2>"))
+		    .append($("<pre>"+todo.getContent()+"</pre>"));
+		
+		contents.push($sec);
+		//links.push($("<a href=\"#todos-"+error.id+"\">Error "+error.id+"</a>"));
+	    }
+	    createSection("todos","Todos ("+todos.length+")",contents);
+	    createMenuList("todos","Todos ("+todos.length+")",links);
 	}
 
 	// Errors
@@ -985,14 +1017,14 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<errors.length; i++){
 		var error = errors[i];
-		var $sec = $("<section id=\"errors-"+error.id+"\"></section>")
+		var $sec = $("<div id=\"errors-"+error.id+"\"></div>")
 		    .append($("<h2>Error "+error.id+"</h2>"))
 		    .append($("<pre>"+error.message+"</pre>"));
 		contents.push($sec);
-		links.push($("<a href=\"#errors-"+error.id+"\">Error "+error.id+"</a>"));
+		//links.push($("<a href=\"#errors-"+error.id+"\">Error "+error.id+"</a>"));
 	    }
-	    createSection("errors","Errors",contents);
-	    createMenuList("Errors",links);
+	    createSection("errors","Errors ("+errors.length+")",contents);
+	    createMenuList("errors","Errors ("+errors.length+")",links);
 	}
     }
     

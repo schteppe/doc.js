@@ -135,15 +135,15 @@ Use the ```@page``` to create a page in your documentation.
 Doc.js does not know a thing about the language it is parsing. Therefore, it cannot autogenerate documentation from your raw code. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation systems (e.g. Doxygen).
 
 ## Todo
-* <code>@deprecated</code> and deprecated list
-* <code>@todo</code> and todo list
-* <code>@author</code> and author lists for all entities
-* Restructure to more javascript-specific doc, ```@function```, ```@prototype``` (for classes), ```@this``` (in functions), ```@event``` (for classes)
-* Ability to specify <code>@memberof</code> for a longer piece of code using e.g. <code>@memberOfStart</code> and <code>@memberOfEnd</code>
-* <code>@example</code> and <code>@code</code> + <code>@endcode</code>
+* ```@deprecated``` and deprecated list
+* ```@todo``` and todo list
+* ```@author``` and author lists for all entities
+* ```@extends``` (for classes)
+* ```@event``` (for classes)
+* Ability to specify ```@memberof``` for a longer piece of code using e.g. ```@memberOfStart``` and ```@memberOfEnd```
+* ```@example``` and ```@code``` + ```@endcode```
 * Parsing error list, including line numbers and such
 * Whenever a known entity is mentioned in ordinary description texts, add link
-* <code>@markdown</code> for pages and examples?
 * Library version, title, description?
 * Single line code blocks e.g. ```/// @param int myParam```
 
