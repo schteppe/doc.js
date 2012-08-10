@@ -1,3 +1,16 @@
+/**
+ * @page doc.js
+ * If you want to know how to USE doc.js, please see the [Github page](https://github.com/schteppe/doc.js).
+ * 
+ * The code for doc.js follows this algorithm:
+ * 
+ * 1. Load files
+ * 2. Parse and construct DOCJS.Block objects
+ * 3. Parse commands from the blocks, get a list of DOCJS.Command objects
+ * 4. Assemble the DOCJS.Command's to DOCJS.Entity objects.
+ * 5. The entities are stored in a DOCJS.Documentation.
+ * 6. Render to HTML.
+ */
 var DOCJS = {};
 
 /**
@@ -271,25 +284,35 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.TodoCommand todoCommand
      * @extends DOCJS.Entity
      */
-    function TodoEntity(block,todoCommand){
+    DOCJS.TodoEntity = function(block,todoCommand){
 	DOCJS.Entity.call(this,block);
 	this.getContent = function(){ return todoCommand.getContent(); };
 	this.setEntity = function(e){ entity = e; };
 	this.getLine = function(){ return todoCommand.getBlock().lineNumber; };
     }
-    
-    function ClassEntity(file,
-			 classCommand,
-			 paramCommands,
-			 extendsCommand, // optional
-			 briefCommand, // optional
-			 descriptionCommand){ // optional
-	if(!(briefCommand instanceof BriefCommand) && typeof(briefCommand)!="undefined"){
+
+    /**
+     * @class DOCJS.ClassEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.ClassCommand classCommand
+     * @param DOCJS.ParamCommand paramCommand
+     * @param DOCJS.ExtendsCommand extendsCommand
+     * @param DOCJS.BriefCommand briefCommand
+     * @param DOCJS.DescriptionCommand descriptionCommand
+     * @extends DOCJS.Entity
+     */
+    DOCJS.ClassEntity = function(block,
+				 classCommand,
+				 paramCommands,
+				 extendsCommand, // optional
+				 briefCommand, // optional
+				 descriptionCommand){ // optional
+	if(!(briefCommand instanceof DOCJS.BriefCommand) && typeof(briefCommand)!="undefined"){
 	    throw new Error("Argument 4 must be BriefCommand or undefined, got "+typeof(briefCommand));
 	}
 	var methodEntities = [];
 	var propertyEntities = [];
-	DOCJS.Entity.call(this,file);
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return classCommand.getName(); };
 
 	this.numMethods = function(){ return methodEntities.length; };
@@ -311,10 +334,17 @@ DOCJS.Generate = function(urls,opt){
 	this.getPropertyBrief = function(i){ return propertyEntities[i].getBrief(); };
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
     }
-    
-    function PageEntity(file,pageCommand,content){
+
+    /**
+     * @class DOCJS.PageEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.PageCommand pageCommand
+     * @param string content
+     * @extends DOCJS.Entity
+     */    
+    DOCJS.PageEntity = function(block,pageCommand,content){
 	var that = this;
-	DOCJS.Entity.call(this,file);
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
 	this.toHTML = function(){
@@ -326,18 +356,72 @@ DOCJS.Generate = function(urls,opt){
 	}
     }
 
+    /**
+     * @class DOCJS.Documentation
+     */
+    DOCJS.Documentation = function(){
+	var name2class, name2entity, that = this;
+	this.pages = [];
+	this.classes = [];
+	this.files = [];
+	this.functions = [];
+	this.todos = [];
+	this.errors = [];
+	this.methods = [];
+	this.properties = [];
+	this.update = function(){
+	    name2entity = {};
+
+	    // Classes
+	    name2class = {};
+	    var N = this.classes.length;
+	    for(var i=0; i<N; i++){
+		var c = this.classes[i];
+		var n = c.getName();
+		name2class[n] = c;
+		name2entity[n] = c;
+	    }
+
+	    // Sort
+	    var sortbyname = function(a,b){
+		if(a.getName() > b.getName()) return 1;
+		if(a.getName() < b.getName()) return -1;
+		else return 0;
+	    };
+	    that.pages.sort(sortbyname);
+	    that.classes.sort(sortbyname);
+	    that.functions.sort(sortbyname);
+	};
+	this.nameToClass = function(name){
+	    var c = name2class[name];
+	    if(c) return c;
+	    else return false;
+	}
+	this.nameToEntity = function(name){
+	    var c = name2entity[name];
+	    if(c) return c;
+	    else return false;
+	}
+
+	function recurseInheritance(name,nameList){
+	    nameList.push(name);
+	    var c = that.nameToClass(name);
+	    if(!c) return;
+	    var extended = c.getExtendedClassName();
+	    if(!extended) return;
+	    recurseInheritance(extended,nameList);
+	}
+	this.getInheritanceList = function(classs){
+	    var list = [];
+	    recurseInheritance(classs.getName(),list);
+	    return list;
+	};
+    };
+    
+
     // Assembles Entity's out of Block's
     function makeEntities(blocks){
-	// Entities
-	var pages=[],
-	classes=[],
-	files = [],
-	functions=[],
-	todos=[],
-	errors=[],
-	methods = [],
-	properties = [],
-	name2class={};
+	var doc = new DOCJS.Documentation();
 
 	// Assemble Entities
 	for(var i=0; i<blocks.length; i++){
@@ -355,22 +439,21 @@ DOCJS.Generate = function(urls,opt){
 		    block.markLineAsParsed(lineNumber);
 		}
 		var content = lines_array.join("\n");
-		entity = new PageEntity([block],pageCommand,content);
-		pages.push(entity);
+		entity = new DOCJS.PageEntity([block],pageCommand,content);
+		doc.pages.push(entity);
 		
 	    } else if(block.classs.length){ // Class
 		// May only contain 1 @class command
-		var entity = new ClassEntity([block],
-					     block.classs[0],
-					     block.param,
-					     block.extends[0],
-					     block.brief[0],
-					     block.desc[0]);
-		classes.push(entity);
-		name2class[entity.getName()] = entity;
+		var entity = new DOCJS.ClassEntity([block],
+						   block.classs[0],
+						   block.param,
+						   block.extends[0],
+						   block.brief[0],
+						   block.desc[0]);
+		doc.classes.push(entity);
 
 	    } else if(block.file.length){ // File
-
+		
 	    } else if(block.func.length){ // Function
 		var ret = block.ret[0]; // optional
 		var brief = block.brief[0];  // optional
@@ -381,7 +464,7 @@ DOCJS.Generate = function(urls,opt){
 						  ret,
 						  brief,
 						  description);
-		functions.push(entity);
+		doc.functions.push(entity);
 
 	    } else if(block.method.length){ // Method
 		if(block.memberof.length==1){
@@ -391,28 +474,30 @@ DOCJS.Generate = function(urls,opt){
 					      block.param,
 					      block.brief[0],
 					      block.ret[0]);
-		    methods.push(entity);
+		    doc.methods.push(entity);
 		}
-	    } else if(block.property.length){
+
+		
+	    } else if(block.property.length){ // Property
 		if(block.memberof.length!=1)
-		    errors.push(new ErrorReport(block.filename,
-						block.lineNumber,
-						"A @property block requires exactly 1 @memberof command, got "+block.memberof.length+"."));
+		    doc.errors.push(new ErrorReport(block.filename,
+						    block.lineNumber,
+						    "A @property block requires exactly 1 @memberof command, got "+block.memberof.length+"."));
 		else {
 		    entity = new PropertyEntity([block],
 						block.property[0],
 						block.memberof[0],
 						block.brief[0],
 						block.desc[0]);
-		    properties.push(entity);
+		    doc.properties.push(entity);
 		}
 	    }
 		
 	    // Check for todos
 	    if(block.todo.length){
 		for(var j=0; j<block.todo.length; j++){
-		    var todo = new TodoEntity([block],block.todo[j]);
-		    todos.push(todo);
+		    var todo = new DOCJS.TodoEntity([block],block.todo[j]);
+		    doc.todos.push(todo);
 		    todo.setEntity(entity);
 		}
 	    }
@@ -431,59 +516,65 @@ DOCJS.Generate = function(urls,opt){
 		for(var j in unparsed){
 		    message += "Line "+j+": "+unparsed[j]+"\n";
 		}
-		errors.push(new ErrorReport(block.filename,
-					    block.lineNumber,
-					    message));
+		doc.errors.push(new ErrorReport(block.filename,
+						block.lineNumber,
+						message));
 	    }
 	}
+
+	doc.update();
 
 	// Attach methods, properties to their classes
-	for(var i=0; i<methods.length; i++){
-	    var m = methods[i];
-	    var c = name2class[m.getClassName()];
-	    if(c) c.addMethod(m);
-	    else {
-		errors.push(new ErrorReport("",1,"Could not add method "+m.getName()+" to the class "+m.getClassName()+", could not find that class."));
-	    }
+	for(var i=0; i<doc.methods.length; i++){
+	    var m = doc.methods[i];
+	    var c = doc.nameToClass(m.getClassName());
+	    if(c)
+		c.addMethod(m);
+	    else
+		doc.errors.push(new ErrorReport("",1,"Could not add method "+m.getName()+" to the class "+m.getClassName()+", could not find that class."));
 	}
-	for(var i=0; i<properties.length; i++){
-	    var p = properties[i];
-	    var c = name2class[p.getClassName()];
-	    if(c) c.addProperty(p);
-	    else errors.push(new ErrorReport("",
-					     p.block.lineNumber,
-					     "Could not attach property "+p.getName()+" to the class "+p.getClassName()+" because it could not be found."));
+	for(var i=0; i<doc.properties.length; i++){
+	    var p = doc.properties[i];
+	    var c = doc.nameToClass(p.getClassName());
+	    if(c)
+		c.addProperty(p);
+	    else
+		doc.errors.push(new ErrorReport("",
+						p.block.lineNumber,
+						"Could not attach property "+p.getName()+" to the class "+p.getClassName()+" because it could not be found."));
 	}
 
-	return {
-	    pages : pages,
-	    classes : classes,
-	    files : files,
-	    functions : functions,
-	    errors : errors,
-	    todos : todos,
-	};
+	return doc;
     }
 
-    // A parsed command
-    function Command(block){
+    /**
+     * @class DOCJS.Command
+     * @param DOCJS.Block block
+     */
+    DOCJS.Command = function(block){
 	if(!(block instanceof Block)) throw new Error("Argument block must be instance of Block");
 	this.getBlock = function(){ return block; };
 	this.setBlock = function(b){ block = b; };
     }
 
-    function AuthorCommand(block,content){
-	Command.call(this,block);
+    /**
+     * @class DOCJS.AuthorCommand
+     * @param DOCJS.Block block
+     * @param string content
+     * @extends DOCJS.Command
+     */
+    DOCJS.AuthorCommand = function(block,content){
+	DOCJS.Command.call(this,block);
 	this.getContent = function(){ return content; };
 	this.setContent = function(n){ content=n; };
     }
-    AuthorCommand.parse = function(block,errors){
+    DOCJS.AuthorCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
 	    var result = line.match(/@author\s+(.*)$/);
 	    if(result && result.length==2){
-		var author = new AuthorCommand(block,result[1]);
+		var author = new DOCJS.AuthorCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(author);
 	    }
@@ -491,12 +582,18 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function BriefCommand(block,content){
-	Command.call(this,block);
+    /**
+     * @class DOCJS.BriefCommand
+     * @param DOCJS.Block block
+     * @param string content
+     * @extends DOCJS.Command
+     */
+    DOCJS.BriefCommand = function(block,content){
+	DOCJS.Command.call(this,block);
 	this.getContent = function(){ return content; };
 	this.setContent = function(c){ content=c; };
     }
-    BriefCommand.parse = function(block,errors){
+    DOCJS.BriefCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -504,7 +601,7 @@ DOCJS.Generate = function(urls,opt){
 	    // @brief briefString
 	    var result = line.match(/@brief\s+(.*)$/);
 	    if(result && result.length==2){
-		var command = new BriefCommand(block,result[1]);
+		var command = new DOCJS.BriefCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -512,12 +609,12 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function ClassCommand(block,name){
-	Command.call(this,block);
+    DOCJS.ClassCommand = function(block,name){
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
-    ClassCommand.parse = function(block,errors){
+    DOCJS.ClassCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -525,7 +622,7 @@ DOCJS.Generate = function(urls,opt){
 	    // @class ClassNameInOneWord
 	    var result = line.match(/@class\s+([^\s]*)$/);
 	    if(result && result.length==2){
-		var command = new ClassCommand(block,result[1]);
+		var command = new DOCJS.ClassCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -533,17 +630,17 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function DescriptionCommand(block,content){
-	Command.call(this,block);
+    DOCJS.DescriptionCommand = function(block,content){
+	DOCJS.Command.call(this,block);
 	this.getContent = function(){ return content; };
 	this.setContent = function(n){ content=n; };
     }
-    DescriptionCommand.parse = function(block,errors){
+    DOCJS.DescriptionCommand.parse = function(block,errors){
 	var commands=[], src = block.getUnparsedLines().join("\n");
 	var result = src.match(/((@description)|(@desc))\s+((.(?!@))*)/m)||[]; // anything but not followed by @
 	if(result.length>=4 && result[4]!=""){
 	    var content = result[4];
-	    var command = new DescriptionCommand(block,content);
+	    var command = new DOCJS.DescriptionCommand(block,content);
 	    var contentLines = content.split("\n");
 	    for(var i=0; i<contentLines.length; i++){
 		var n = block.getLineNumber(contentLines[i]);
@@ -554,15 +651,15 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
-    function EventCommand(block,name,description){
-	Command.call(this,block);
+    DOCJS.EventCommand = function(block,name,description){
+	DOCJS.Command.call(this,block);
 	description = description || "";
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
 	this.getDescription = function(){ return description; };
 	this.setDescription = function(s){ description=s; };
     }
-    EventCommand.parse = function(block,errors){
+    DOCJS.EventCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
@@ -573,7 +670,7 @@ DOCJS.Generate = function(urls,opt){
 		var name = result[1];
 		var desc;
 		if(result.length>=3) desc = result[2];
-		var command = new EventCommand(block,name,desc);
+		var command = new DOCJS.EventCommand(block,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -582,7 +679,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function ExtendsCommand(block,className){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getClassName = function(){ return className; };
     }
     ExtendsCommand.parse = function(block,errors){
@@ -602,9 +699,16 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
+    /**
+     * @class DOCJS.FunctionCommand
+     * @param DOCJS.Block block
+     * @param string name
+     * @param string description
+     * @extends DOCJS.Command
+     */
     function FunctionCommand(block,name,description){
 	if(typeof(name)!="string") throw new Error("Argument 2 must be string, "+typeof(name)+" given");
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
 	this.getDescription = function(){ return description; };
@@ -630,7 +734,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function MemberofCommand(block,className){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getClassName = function(){ return className; };
 	this.setClassName = function(n){ className=n; };
     }
@@ -651,7 +755,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function MethodCommand(block,name){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
@@ -674,7 +778,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function PageCommand(block,name){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
@@ -696,7 +800,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function ParamCommand(block,dataType,name,description){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.getDataType = function(){ return dataType; };
 	this.getDescription = function(){ return description ? description : false; };
@@ -722,7 +826,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function PropertyCommand(block,datatype,name,desc){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
 	this.getDataType = function(){ return datatype; };
@@ -748,7 +852,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function PrototypeCommand(block,name){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getName = function(){ return name; };
 	this.setName = function(n){ name=n; };
     }
@@ -757,7 +861,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function ReturnCommand(block,dataType,description){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getDescription = function(){ return description; };
 	this.setDescription = function(n){ description=n; };
 	this.getDataType = function(){ return dataType; };
@@ -784,7 +888,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function SeeCommand(block,text){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getText = function(){ return text; };
 	this.setText = function(n){ text=n; };
     }
@@ -806,7 +910,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     function TodoCommand(block,content){
-	Command.call(this,block);
+	DOCJS.Command.call(this,block);
 	this.getContent = function(){ return content; };
 	this.setContent = function(n){ content=n; };
     }
@@ -856,10 +960,10 @@ DOCJS.Generate = function(urls,opt){
 	    var errors = [];
 
 	    // Parse commands from block
-	    block.author =   AuthorCommand.parse(block,errors);
-	    block.brief =    BriefCommand.parse(block,errors);
-	    block.classs =   ClassCommand.parse(block,errors);
-	    block.event =    EventCommand.parse(block,errors);
+	    block.author =   DOCJS.AuthorCommand.parse(block,errors);
+	    block.brief =    DOCJS.BriefCommand.parse(block,errors);
+	    block.classs =   DOCJS.ClassCommand.parse(block,errors);
+	    block.event =    DOCJS.EventCommand.parse(block,errors);
 	    block.extends=   ExtendsCommand.parse(block,errors);
 	    block.func =     FunctionCommand.parse(block,errors);
 	    block.memberof = MemberofCommand.parse(block,errors);
@@ -871,43 +975,24 @@ DOCJS.Generate = function(urls,opt){
 	    block.ret =      ReturnCommand.parse(block,errors);
 	    block.see =      SeeCommand.parse(block,errors);
 	    block.todo =     TodoCommand.parse(block,errors);
-	    block.desc =     DescriptionCommand.parse(block,errors);
+	    block.desc =     DOCJS.DescriptionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
 	} 
 	return blockObjects;
     };
 
-    function updateHTML(entities){
-	var classes = entities.classes,
-	files = entities.files,
-	pages = entities.pages,
-	functions = entities.functions,
-	errors = entities.errors,
-	todos = entities.todos;
+    function updateHTML(doc){
 
-	var name2class = {};
-
-	// Register hash for datatypes
-	for(var i=0; i<classes.length; i++){
-	    name2class[classes[i].getName()] = classes[i];
-	}
-	
-	// Sort
-	var sortbyname=function(a,b){
-	    if(a.getName() > b.getName()) return 1;
-	    if(a.getName() < b.getName()) return -1;
-	    else return 0;
-	};
-	pages.sort(sortbyname);
-	classes.sort(sortbyname);
-	functions.sort(sortbyname);
-	
-	function datatype2link(name){
-	    if(name2class[name])
-		return "<a href=\"#"+name+"\">"+name+"</a>";
-	    else
-		return name;
+	// Convert a name to a link, or just return the input name
+	function nameToLink(name){
+	    var r = name;
+	    var entity = doc.nameToEntity(name);
+	    if(entity){
+		if(entity instanceof DOCJS.ClassEntity)
+		    r = "<a href=\"#classes-"+toNice(name)+"\">"+name+"</a>";
+	    }
+	    return r;
 	}
 
 	// Create a section e.g. Classes, Functions, etc
@@ -938,10 +1023,10 @@ DOCJS.Generate = function(urls,opt){
 	}
 	
 	// Pages
-	if(pages.length > 0){
+	if(doc.pages.length > 0){
 	    var links = [], contents = [];
-	    for(var i=0; i<pages.length; i++){
-		var page = pages[i];
+	    for(var i=0; i<doc.pages.length; i++){
+		var page = doc.pages[i];
 		var $sec = $("<section id=\"pages-"+toNice(page.getName())+"\"></section>")
 		    .append($("<h2>"+page.getName()+"</h2>"))
 		    .append($(page.toHTML()));
@@ -954,10 +1039,10 @@ DOCJS.Generate = function(urls,opt){
 	}
 
 	// Functions
-	if(functions.length > 0){
+	if(doc.functions.length > 0){
 	    var links = [], contents = [];
-	    for(var i=0; i<functions.length; i++){
-		var f = functions[i];
+	    for(var i=0; i<doc.functions.length; i++){
+		var f = doc.functions[i];
 		var $sec = $("<section id=\"functions-"+toNice(f.getName())+"\"></section>")
 		    .append($("<h2>"+f.getName()+"</h2>"));
 
@@ -1009,21 +1094,31 @@ DOCJS.Generate = function(urls,opt){
 	
 
 	// Classes
-	if(classes.length > 0){
+	if(doc.classes.length > 0){
 	    var links = [], contents = [];
-	    for(var i=0; i<classes.length; i++){
-		var c = classes[i];
+	    for(var i=0; i<doc.classes.length; i++){
+		var c = doc.classes[i];
+		
 		var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
 		$sec.append($("<h2>"+c.getName()+"</h2>"));
-		if(c.getExtendedClassName())
-		    $sec.append($("<p>Extends "+c.getExtendedClassName()+"</p>"));
+
+		// Inheritance
+		var extendsList = doc.getInheritanceList(c);
+		extendsList.shift();
+		if(extendsList.length >= 1){
+		    for(var j=0; j<extendsList.length; j++)
+			extendsList[j] = nameToLink(extendsList[j]);
+		    $sec.append($("<p>Extends "+extendsList.join(" → ")+"</p>"));
+		}
+
+		// Brief
 		if(c.getBrief())
 		    $sec.append($("<p>"+c.getBrief()+"</p>"));
 
 		// Constructor
 		var args = [];
 		for(var j=0; j<c.numParams(); j++)
-		    args.push("<span class=\"datatype\">"+c.getParamDataType(j)+"</span> " + c.getParamName(j));
+		    args.push("<span class=\"datatype\">"+nameToLink(c.getParamDataType(j))+"</span> " + c.getParamName(j));
 		$sec.append($("<h3>Constructor</h3>"));
 		$sec.append($("<p>"+c.getName() + " ( " + args.join(" , ")+" )</p>"));
 
@@ -1036,7 +1131,7 @@ DOCJS.Generate = function(urls,opt){
 			var method = c.getMethod(k);
 			var params = [];
 			for(var k=0; k<method.numParams(); k++){
-			    params.push("<span class=\"datatype\">"+method.getParamDataType(k)+"</span>" + " " + method.getParamName(k));
+			    params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(k))+"</span>" + " " + method.getParamName(k));
 			}
 			$methods
 			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
@@ -1064,31 +1159,28 @@ DOCJS.Generate = function(urls,opt){
 	}
 
 	// Todos
-	if(todos.length > 0){
+	if(doc.todos.length > 0){
 	    var links = [], contents = [];
-	    for(var i=0; i<todos.length; i++){
-		var todo = todos[i];
+	    for(var i=0; i<doc.todos.length; i++){
+		var todo = doc.todos[i];
 		var $sec = $("<div id=\"todos-"+todo.id+"\"></div>")
 		    .append($("<h2>Line "+todo.getLine()+"</h2>"))
 		    .append($("<pre>"+todo.getContent()+"</pre>"));
-		
 		contents.push($sec);
-		//links.push($("<a href=\"#todos-"+error.id+"\">Error "+error.id+"</a>"));
 	    }
 	    createSection("todos","Todos ("+todos.length+")",contents);
 	    createMenuList("todos","Todos ("+todos.length+")",links);
 	}
 
 	// Errors
-	if(errors.length > 0){
+	if(doc.errors.length > 0){
 	    var links = [], contents = [];
-	    for(var i=0; i<errors.length; i++){
-		var error = errors[i];
+	    for(var i=0; i<doc.errors.length; i++){
+		var error = doc.errors[i];
 		var $sec = $("<div id=\"errors-"+error.id+"\"></div>")
 		    .append($("<h2>Error "+error.id+"</h2>"))
 		    .append($("<pre>"+error.message+"</pre>"));
 		contents.push($sec);
-		//links.push($("<a href=\"#errors-"+error.id+"\">Error "+error.id+"</a>"));
 	    }
 	    createSection("errors","Errors ("+errors.length+")",contents);
 	    createMenuList("errors","Errors ("+errors.length+")",links);
