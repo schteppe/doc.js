@@ -481,6 +481,11 @@ DOCJS.Generate = function(urls,opt){
 		doc.pages.push(entity);
 		
 	    } else if(block.classs.length){ // Class
+		if(block.ret.length)
+		    doc.errors.push(new DOCJS.ErrorReport(block.filename,
+							  block.lineNumber,
+							  "@class blocks may not contain @return"));
+
 		// May only contain 1 @class command
 		var entity = new DOCJS.ClassEntity([block],
 						   block.classs[0],
@@ -911,10 +916,9 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
-     * @function DOCJS.LibraryCommand
+     * @class DOCJS.LibraryCommand
      * @param DOCJS.Block block
      * @param string libraryName
-     * @return Array
      */
     DOCJS.LibraryCommand = function(block,libraryName){
 	DOCJS.Command.call(this,block);
@@ -978,10 +982,9 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
-     * @function DOCJS.PageCommand
+     * @class DOCJS.PageCommand
      * @param DOCJS.Block block
      * @param string name
-     * @return Array
      */
     DOCJS.PageCommand = function(block,name){
 	DOCJS.Command.call(this,block);
@@ -1012,12 +1015,11 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
-     * @function DOCJS.ParamCommand
+     * @class DOCJS.ParamCommand
      * @param DOCJS.Block block
      * @param string dataType
      * @param string name
      * @param string description
-     * @return Array
      */
     DOCJS.ParamCommand = function(block,dataType,name,description){
 	DOCJS.Command.call(this,block);
@@ -1474,7 +1476,7 @@ DOCJS.Generate = function(urls,opt){
 	    for(var i=0; i<doc.errors.length; i++){
 		var error = doc.errors[i];
 		var $sec = $("<div id=\"errors-"+error.id+"\"></div>")
-		    .append($("<h2>Error "+error.id+"</h2>"))
+		    .append($("<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>"))
 		    .append($("<pre>"+error.message+"</pre>"));
 		contents.push($sec);
 	    }
