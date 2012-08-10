@@ -1,5 +1,11 @@
 var DOCJS = {};
 
+/**
+ * @function DOCJS.Generate
+ * @param Array urls
+ * @param Object opt
+ * @brief Generate Doc.js documentation.
+ */
 DOCJS.Generate = function(urls,opt){
 
     // Options
@@ -148,8 +154,15 @@ DOCJS.Generate = function(urls,opt){
     // The Entities corresponds to a thing that is viewed to the user, eg. Function, Class etc.
     var globalEntityCounter = 0; // ids unique to all entities
     var entityCounter = {}; // entityName => number. Ids unique within entity type.
-    function Entity(blocks,entityName){
-	this.blocks = blocks; // where it was defined
+
+    /**
+     * @class DOCJS.Entity
+     * @param DOCJS.Block block
+     * @param string entityName
+     * @brief Base class for entities.
+     */
+    DOCJS.Entity = function(block,entityName){
+	this.block = block; // where it was defined
 
 	if(!(entityName in entityCounter))
 	    entityCounter[entityName] = 0;
@@ -159,19 +172,35 @@ DOCJS.Generate = function(urls,opt){
 	this.globalId = ++globalEntityCounter;
     }
 
-    function FileEntity(file,fileCommand){
-	Entity.call(this,file);
+    /**
+     * @class DOCJS.FileEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.FileCommand fileCommand
+     * @extends DOCJS.Entity
+     */
+    DOCJS.FileEntity = function(block,fileCommand){
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return fileCommand.getName(); };
     }
 
-    function FunctionEntity(file,
-			    functionCommand,
-			    paramCommands,
-			    returnCommand, // optional
-			    briefCommand,   // optional
-			    descriptionCommand // optional
-			   ){
-	Entity.call(this,file);
+    /**
+     * @class DOCJS.FunctionEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.FunctionCommand functionCommand
+     * @param DOCJS.ParamCommand paramCommand
+     * @param DOCJS.ReturnCommand returnCommand Optional
+     * @param DOCJS.BriefCommand briefCommand Optional
+     * @param DOCJS.DescriptionCommand descriptionCommand Optional
+     * @extends DOCJS.Entity
+     */
+    DOCJS.FunctionEntity = function(block,
+				    functionCommand,
+				    paramCommands,
+				    returnCommand, // optional
+				    briefCommand,   // optional
+				    descriptionCommand // optional
+				   ){
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return functionCommand ? functionCommand.getName() : false; };
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
@@ -186,13 +215,22 @@ DOCJS.Generate = function(urls,opt){
 	this.addParam = function(p){ paramCommands.push(p); };
     }
 
-    function MethodEntity(file,
-			  methodCommand,
-			  memberofCommand,
-			  paramCommands,
-			  briefCommand,
-			  returnCommand){
-	Entity.call(this,file);
+    /**
+     * @class DOCJS.MethodEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.MemberofCommand memberof
+     * @param DOCJS.ParamCommand param
+     * @param DOCJS.BriefCommand brief
+     * @param DOCJS.ReturnCommand return
+     * @extends DOCJS.Entity
+     */
+    DOCJS.MethodEntity = function(block,
+				  methodCommand,
+				  memberofCommand,
+				  paramCommands,
+				  briefCommand,
+				  returnCommand){
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return methodCommand.getName(); };
 	this.getClassName = function(){ return memberofCommand.getClassName(); };
 
@@ -204,13 +242,22 @@ DOCJS.Generate = function(urls,opt){
 	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
     }
 
-    function PropertyEntity(file,
-			    propertyCommand,
-			    memberofCommand,
-			    briefCommand, // optional
-			    descriptionCommand // optional
-			   ){
-	Entity.call(this,file);
+    /**
+     * @class DOCJS.PropertyEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.PropertyCommand property
+     * @param DOCJS.MemberofCommand memberof
+     * @param DOCJS.BriefCommand brief
+     * @param DOCJS.DescriptionCommand description
+     * @extends DOCJS.Entity
+     */
+    DOCJS.PropertyEntity = function(block,
+				    propertyCommand,
+				    memberofCommand,
+				    briefCommand, // optional
+				    descriptionCommand // optional
+				   ){
+	DOCJS.Entity.call(this,block);
 	this.getName = function(){ return propertyCommand.getName(); };
 	this.getClassName = function(){ return memberofCommand.getClassName(); };
 	this.getDataType = function(){ return propertyCommand.getDataType(); };
@@ -218,8 +265,14 @@ DOCJS.Generate = function(urls,opt){
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
     }
 
-    function TodoEntity(file,todoCommand){
-	Entity.call(this,file);
+    /**
+     * @class DOCJS.TodoEntity
+     * @param DOCJS.Block block
+     * @param DOCJS.TodoCommand todoCommand
+     * @extends DOCJS.Entity
+     */
+    function TodoEntity(block,todoCommand){
+	DOCJS.Entity.call(this,block);
 	this.getContent = function(){ return todoCommand.getContent(); };
 	this.setEntity = function(e){ entity = e; };
 	this.getLine = function(){ return todoCommand.getBlock().lineNumber; };
@@ -235,7 +288,7 @@ DOCJS.Generate = function(urls,opt){
 	}
 	var methodEntities = [];
 	var propertyEntities = [];
-	Entity.call(this,file);
+	DOCJS.Entity.call(this,file);
 	this.getName = function(){ return classCommand.getName(); };
 
 	this.numMethods = function(){ return methodEntities.length; };
@@ -258,7 +311,7 @@ DOCJS.Generate = function(urls,opt){
     
     function PageEntity(file,pageCommand,content){
 	var that = this;
-	Entity.call(this,file);
+	DOCJS.Entity.call(this,file);
 	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
 	this.toHTML = function(){
@@ -318,12 +371,12 @@ DOCJS.Generate = function(urls,opt){
 		var ret = block.ret[0]; // optional
 		var brief = block.brief[0];  // optional
 		var description = block.desc[0];  // optional
-		entity = new FunctionEntity([block],
-					    block.func[0],
-					    block.param,
-					    ret,
-					    brief,
-					    description);
+		entity = new DOCJS.FunctionEntity([block],
+						  block.func[0],
+						  block.param,
+						  ret,
+						  brief,
+						  description);
 		functions.push(entity);
 
 	    } else if(block.method.length){ // Method
@@ -394,7 +447,7 @@ DOCJS.Generate = function(urls,opt){
 	    var c = name2class[p.getClassName()];
 	    if(c) c.addProperty(p);
 	    else errors.push(new ErrorReport("",
-					     p.blocks[0].lineNumber,
+					     p.block.lineNumber,
 					     "Could not attach property "+p.getName()+" to the class "+p.getClassName()+" because it could not be found."));
 	}
 
@@ -424,9 +477,6 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @author authorString
-	     */
 	    var result = line.match(/@author\s+(.*)$/);
 	    if(result && result.length==2){
 		var author = new AuthorCommand(block,result[1]);
@@ -446,9 +496,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @brief briefString
-	     */
+
+	    // @brief briefString
 	    var result = line.match(/@brief\s+(.*)$/);
 	    if(result && result.length==2){
 		var command = new BriefCommand(block,result[1]);
@@ -468,9 +517,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @class ClassNameInOneWord
-	     */
+
+	    // @class ClassNameInOneWord
 	    var result = line.match(/@class\s+([^\s]*)$/);
 	    if(result && result.length==2){
 		var command = new ClassCommand(block,result[1]);
@@ -514,9 +562,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @event name [description]
-	     */
+	    
+	    // @event name [description]
 	    var result = line.match(/@event\s+([^\s]*)(\s+(.*)){0,1}$/);
 	    if(result){
 		var name = result[1];
@@ -542,9 +589,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @[function|fn] name [description]
-	     */
+
+	    // @[function|fn] name [description]
 	    var result = line.match(/((@function)|(@fn))\s+([^\s]+)(\s+(.*))?/);
 	    if(result){
 		var name = result[4];
@@ -567,9 +613,7 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @[memberof|memberOf] ClassName
-	     */
+	    // @[memberof|memberOf] ClassName
 	    var result = line.match(/(@memberOf)|(@memberof)\s+([^\s]*)$/);
 	    if(result && result.length>=4){
 		var classname = result[3];
@@ -590,9 +634,9 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @method methodName
-	     */
+
+	    // @method methodName
+
 	    var result = line.match(/@method\s+([^\s]*)$/);
 	    if(result){
 		var methodname = result[1];
@@ -613,9 +657,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @page PageTitleString
-	     */
+
+	    // @page PageTitleString
 	    var result = line.match(/@page\s+(.*)$/);
 	    if(result){
 		var pagename = result[1];
@@ -637,9 +680,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @param dataType paramName [paramDescription]
-	     */
+
+		// @param dataType paramName [paramDescription]
 	    var result = line.match(/@param\s+([^\s]*)\s+([^\s]+)(\s+(.*)){0,1}$/);
 	    if(result){
 		var dataType = result[1],
@@ -664,9 +706,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @property dataType name [description]
-	     */
+
+	    // @property dataType name [description]
 	    var result = line.match(/@property\s+([^\s]*)\s+([^\s]*)\s*(.*){0,1}$/);
 	    if(result){
 		var dataType = result[1],
@@ -701,9 +742,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @return dataType [description]
-	     */
+
+	    // @return dataType [description]
 	    var result = line.match(/@return[s]{0,1}\s+([^\s]*)\s*(.*){0,1}$/);
 	    if(result){
 		var dataType = result[1],
@@ -727,9 +767,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @see text
-	     */
+	    
+	    // @see text
 	    var result = line.match(/@see\s+(.*)$/);
 	    if(result){
 		var text = result[1];
@@ -750,9 +789,8 @@ DOCJS.Generate = function(urls,opt){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
 	    var line = lines[j];
-	    /**
-	     * @todo [text]
-	     */
+
+	    // @todo [text]
 	    var result = line.match(/@todo(\s+(.*))$/);
 	    if(result){
 		var text = result[1];
