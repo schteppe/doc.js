@@ -281,6 +281,7 @@ DOCJS.Generate = function(urls,opt){
     function ClassEntity(file,
 			 classCommand,
 			 paramCommands,
+			 extendsCommand, // optional
 			 briefCommand, // optional
 			 descriptionCommand){ // optional
 	if(!(briefCommand instanceof BriefCommand) && typeof(briefCommand)!="undefined"){
@@ -300,6 +301,8 @@ DOCJS.Generate = function(urls,opt){
 	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
 	this.getParamName = function(i){ return paramCommands[i].getName(); };
 	this.addParam = function(p){ paramCommands.push(p); };
+
+	this.getExtendedClassName = function(){ return extendsCommand ? extendsCommand.getClassName() : false; };
 
 	this.numProperties = function(){ return propertyEntities.length; };
 	this.addProperty = function(m){ propertyEntities.push(m); };
@@ -360,6 +363,7 @@ DOCJS.Generate = function(urls,opt){
 		var entity = new ClassEntity([block],
 					     block.classs[0],
 					     block.param,
+					     block.extends[0],
 					     block.brief[0],
 					     block.desc[0]);
 		classes.push(entity);
@@ -570,6 +574,27 @@ DOCJS.Generate = function(urls,opt){
 		var desc;
 		if(result.length>=3) desc = result[2];
 		var command = new EventCommand(block,name,desc);
+		block.markLineAsParsed(j);
+		commands.push(command);
+	    }
+	}
+	return commands;
+    }
+
+    function ExtendsCommand(block,className){
+	Command.call(this,block);
+	this.getClassName = function(){ return className; };
+    }
+    ExtendsCommand.parse = function(block,errors){
+	var commands = [], lines = block.getUnparsedLines2();
+	for(var j in lines){
+	    var line = lines[j];
+	    
+	    // @extends className
+	    var result = line.match(/@extends\s+([^\s]*)/);
+	    if(result){
+		var name = result[1];
+		var command = new ExtendsCommand(block,name);
 		block.markLineAsParsed(j);
 		commands.push(command);
 	    }
@@ -835,6 +860,7 @@ DOCJS.Generate = function(urls,opt){
 	    block.brief =    BriefCommand.parse(block,errors);
 	    block.classs =   ClassCommand.parse(block,errors);
 	    block.event =    EventCommand.parse(block,errors);
+	    block.extends=   ExtendsCommand.parse(block,errors);
 	    block.func =     FunctionCommand.parse(block,errors);
 	    block.memberof = MemberofCommand.parse(block,errors);
 	    block.method =   MethodCommand.parse(block,errors);
@@ -981,6 +1007,7 @@ DOCJS.Generate = function(urls,opt){
 	    createMenuList("functions","Functions",links);
 	}
 	
+
 	// Classes
 	if(classes.length > 0){
 	    var links = [], contents = [];
@@ -988,6 +1015,8 @@ DOCJS.Generate = function(urls,opt){
 		var c = classes[i];
 		var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
 		$sec.append($("<h2>"+c.getName()+"</h2>"));
+		if(c.getExtendedClassName())
+		    $sec.append($("<p>Extends "+c.getExtendedClassName()+"</p>"));
 		if(c.getBrief())
 		    $sec.append($("<p>"+c.getBrief()+"</p>"));
 
