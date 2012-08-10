@@ -151,11 +151,13 @@ DOCJS.Generate = function(urls,opt){
 			    functionCommand,
 			    paramCommands,
 			    returnCommand, // optional
-			    briefCommand   // optional
+			    briefCommand,   // optional
+			    descriptionCommand // optional
 			   ){
 	Entity.call(this,file);
 	this.getName = function(){ return functionCommand ? functionCommand.getName() : false; };
-	this.getBrief = function(){ return briefCommand ? briefCommand.getName() : false; };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
+	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
 
 	this.getReturnDataType = function(){ return returnCommand.getDataType(); };
 
@@ -280,11 +282,15 @@ DOCJS.Generate = function(urls,opt){
 	    } else if(block.file.length){ // File
 
 	    } else if(block.func.length){ // Function
-		// May only contain 1 @function command
+		var ret = block.ret[0]; // optional
+		var brief = block.brief[0];  // optional
+		var description = block.desc[0];  // optional
 		entity = new FunctionEntity([block],
 					    block.func[0],
 					    block.param,
-					    block.ret[0]);
+					    ret,
+					    brief,
+					    description);
 		functions.push(entity);
 
 	    } else if(block.method.length){ // Method
@@ -859,13 +865,22 @@ DOCJS.Generate = function(urls,opt){
 		for(var k=0; k<f.numParams(); k++){
 		    params.push("<span class=\"datatype\">"+f.getParamDataType(k)+"</span> <span>" + f.getParamName(k) + "</span>");
 		}
+		// Signature
 		$sec.append($("<span class=\"datatype\">"+
 			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
 			      "</span> <span>" + 
 			      f.getName() + 
-			      " ( " + params.join(" , ") + " ) </span>"))
-		if(f.getBrief())
+			      " ( " + params.join(" , ") + " ) </span>"));
+		
+		// Brief
+		if(f.getBrief()){
 		    $sec.append( $("<p class=\"brief\">"+f.getBrief()+"</p>"));
+		}
+
+		// Description
+		if(f.getDescription()){
+		    $sec.append( $("<p class=\"description\">"+f.getDescription()+"</p>"));
+		}
 
 
 		contents.push($sec);
