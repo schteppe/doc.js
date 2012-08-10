@@ -43,6 +43,13 @@ DOCJS.Generate = function(urls,opt){
     function ltrim(s){ return s.replace(/^\s+/,''); }
     function rtrim(s){ return s.replace(/\s+$/,''); }
     function fulltrim(s){ return s.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' '); }
+    function toNice(s){
+	var clean = s.replace(/[^a-zA-Z0-9\/_|+ -]+/g, '');
+	clean = trim(clean.toLowerCase());
+	clean = clean.replace(/[\s\n\t]+/g," ").replace(/\s+/g,"-");
+	clean = clean.replace(/[\/_|+ -]+/g, "-");
+	return clean;
+    }
 
     // A comment block in the code.
     var blockIdCounter = 0;
@@ -129,17 +136,27 @@ DOCJS.Generate = function(urls,opt){
 	}
     }
 
+    var errorReportIdCounter = 0;
     function ErrorReport(filename,lineNumber,message){
 	this.lineNumber = lineNumber;
 	this.file = filename;
 	this.message = message;
-	this.id = newId();
+	this.id = ++errorReportIdCounter;
     }
 
     // An Entity is a set of Command's
     // The Entities corresponds to a thing that is viewed to the user, eg. Function, Class etc.
-    function Entity(blocks){
+    var globalEntityCounter = 0; // ids unique to all entities
+    var entityCounter = {}; // entityName => number. Ids unique within entity type.
+    function Entity(blocks,entityName){
 	this.blocks = blocks; // where it was defined
+
+	if(!(entityName in entityCounter))
+	    entityCounter[entityName] = 0;
+	else
+	    entityCounter[entityName]++;
+	this.id = entityCounter[entityName];
+	this.globalId = ++globalEntityCounter;
     }
 
     function FileEntity(file,fileCommand){
@@ -845,12 +862,12 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<pages.length; i++){
 		var page = pages[i];
-		var $sec = $("<section id=\"pages-"+page.getName()+"\"></section>")
+		var $sec = $("<section id=\"pages-"+toNice(page.getName())+"\"></section>")
 		    .append($("<h2>"+page.getName()+"</h2>"))
 		    .append($(page.toHTML()));
 		
 		contents.push($sec);
-		links = $("<a href=\"#pages-"+page.getName()+"\">"+page.getName()+"</a>");
+		links = $("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>");
 	    }
 	    createSection("pages","Pages",contents);
 	    createMenuList("Pages",links);
@@ -861,7 +878,7 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<functions.length; i++){
 		var f = functions[i];
-		var $sec = $("<section id=\"functions-"+f.getName()+"\"></section>")
+		var $sec = $("<section id=\"functions-"+toNice(f.getName())+"\"></section>")
 		    .append($("<h2>"+f.getName()+"</h2>"));
 
 		// Brief
@@ -904,7 +921,7 @@ DOCJS.Generate = function(urls,opt){
 		}
 
 		contents.push($sec);
-		links = $("<a href=\"#functions-"+f.getName()+"\">"+f.getName()+"</a>");
+		links = $("<a href=\"#functions-"+toNice(f.getName())+"\">"+f.getName()+"</a>");
 	    }
 	    createSection("functions","Functions",contents);
 	    createMenuList("Functions",links);
@@ -915,7 +932,7 @@ DOCJS.Generate = function(urls,opt){
 	    var links = [], contents = [];
 	    for(var i=0; i<classes.length; i++){
 		var c = classes[i];
-		var $sec = $("<section id=\"classes-"+c.getName()+"\"></section>");
+		var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
 		$sec.append($("<h2>"+c.getName()+"</h2>"));
 		if(c.getBrief())
 		    $sec.append($("<p>"+c.getBrief()+"</p>"));
@@ -957,7 +974,7 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($properties);
 		}
 		contents.push($sec);
-		links.push($("<a href=\"#classes-"+c.getName()+"\">"+c.getName()+"</a>"));
+		links.push($("<a href=\"#classes-"+toNice(c.getName())+"\">"+c.getName()+"</a>"));
 	    }
 	    createSection("classes","Classes",contents);
 	    createMenuList("Classes",links);
