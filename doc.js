@@ -1113,7 +1113,7 @@ DOCJS.Generate = function(urls,opt){
 		    .append($(markDown2HTML(page.getContent())));
 		
 		contents.push($sec);
-		links = $("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>");
+		links.push($("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>"));
 	    }
 	    createSection("pages","Pages",contents);
 	    createMenuList("pages","Pages",links);
