@@ -67,7 +67,14 @@ DOCJS.Generate = function(urls,opt){
 
     // A comment block in the code.
     var blockIdCounter = 0;
-    function Block(src,rawSrc,lineNumber){
+
+    /**
+     * @class DOCJS.Block
+     * @param string src
+     * @param string rawSrc
+     * @param int lineNumber
+     */
+    DOCJS.Block = function(src,rawSrc,lineNumber){
 	this.id = ++blockIdCounter;
 	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
 	var idx = rawSrc.indexOf(src);
@@ -592,7 +599,7 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.Block block
      */
     DOCJS.Command = function(block){
-	if(!(block instanceof Block)) throw new Error("Argument block must be instance of Block");
+	if(!(block instanceof DOCJS.Block)) throw new Error("Argument block must be instance of Block");
 	this.getBlock = function(){ return block; };
 	this.setBlock = function(b){ block = b; };
     }
@@ -611,6 +618,12 @@ DOCJS.Generate = function(urls,opt){
 	this.getContent = function(){ return content; };
 	this.setContent = function(n){ content=n; };
     }
+    /**
+     * @function DOCJS.AuthorCommand.parse
+     * @param DOCJS.Block block
+     * @param Array errors
+     * @return Array
+     */
     DOCJS.AuthorCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
@@ -969,11 +982,22 @@ DOCJS.Generate = function(urls,opt){
 	return commands;
     }
 
+    /**
+     * @class DOCJS.SeeCommand
+     * @param DOCJS.Block block
+     * @param string text
+     */
     DOCJS.SeeCommand = function(block,text){
 	DOCJS.Command.call(this,block);
 	this.getText = function(){ return text; };
 	this.setText = function(n){ text=n; };
     }
+    /**
+     * @function DOCJS.SeeCommand.parse
+     * @param DOCJS.Block block
+     * @param Array errors
+     * @return Array
+     */
     DOCJS.SeeCommand.parse = function(block,errors){
 	var commands = [], lines = block.getUnparsedLines2();
 	for(var j in lines){
@@ -1058,7 +1082,7 @@ DOCJS.Generate = function(urls,opt){
 		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
 
 	    // Create block
-	    var block = new Block(lines.join("\n").replace(/[\n\s\t]*$/,""),raw,lineNumber);
+	    var block = new DOCJS.Block(lines.join("\n").replace(/[\n\s\t]*$/,""),raw,lineNumber);
 	    block.filename = file;
 	    var errors = [];
 
@@ -1136,7 +1160,7 @@ DOCJS.Generate = function(urls,opt){
 		$sec.append($("<h3>Description</h3>"));
 		var params = [];
 		for(var k=0; k<f.numParams(); k++){
-		    params.push("<span class=\"datatype\">"+f.getParamDataType(k)+"</span> <span>" + f.getParamName(k) + "</span>");
+		    params.push("<span class=\"datatype\">"+nameToLink(f.getParamDataType(k))+"</span> <span>" + f.getParamName(k) + "</span>");
 		}
 		$sec.append($("<span class=\"datatype\">"+
 			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
@@ -1155,7 +1179,7 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($("<h3>Parameters</h3>"));
 		    var $params = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<f.numParams(); k++){
-			$params.append("<tr><td class=\"datatype\">"+(f.getParamDataType(k))+"</td><td>" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
+			$params.append("<tr><td class=\"datatype\">"+nameToLink(f.getParamDataType(k) ? f.getParamDataType(k) : "")+"</td><td>" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
 		    }
 		    $sec.append($params);
 		}

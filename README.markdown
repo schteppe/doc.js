@@ -43,7 +43,10 @@ Commands are parsed by Doc.js and they are later assembled into things in your d
 @class className [description]
 @description|desc longerDescriptionText
 @event eventName [description]
+@example exampleText @endExample
+@extends className
 @function|fn functionName [description]
+@library libraryName
 @memberof|memberOf className
 @method methodName [description]
 @page pageName
@@ -51,6 +54,7 @@ Commands are parsed by Doc.js and they are later assembled into things in your d
 @return|returns dataType [description]
 @see infoText
 @todo [todoText]
+@version versionNumber
 ```
 
 ## Comment blocks
@@ -65,10 +69,11 @@ Currently only slash-star comment blocks are supported:
 A comment block has got a set of commands. To document an entity, you must specify a valid set of commands. Using a command may require another command to make a valid block, and there are some optional commands.
 ```
 Command      Requires    Optional 
-@class                   @author* @brief @description @event* @param*         @see* @todo*
-@function                @author* @brief @description         @param* @return @see* @todo*
-@method      @memberof   @author* @brief @description         @param* @return @see* @todo*
-@property    @memberof   @author* @brief @description                         @see* @todo*
+@class                   @author* @brief @description @event* @extends @param*         @see* @todo* @example
+@function                @author* @brief @description                  @param* @return @see* @todo* @example
+@library                 @author* @brief @description                                               @version
+@method      @memberof   @author* @brief @description                  @param* @return @see* @todo*
+@property    @memberof   @author* @brief @description                                  @see* @todo*
 * = May be specified more than once in the same block.
 ```
 ### Examples
