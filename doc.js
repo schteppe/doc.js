@@ -235,6 +235,10 @@ DOCJS.Generate = function(urls,opt){
 	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
 	this.toHTML = function(){
+	    if(typeof(Markdown)!="undefined"){
+		var converter = Markdown.getSanitizingConverter();
+		return converter.makeHtml(that.getContent());
+	    } else
 	    return "<div>"+that.getContent()+"</div>"; // todo
 	}
     }
@@ -267,7 +271,7 @@ DOCJS.Generate = function(urls,opt){
 		    lines_array.push(line);
 		    block.markLineAsParsed(lineNumber);
 		}
-		var content = lines_array.join("<br/>");
+		var content = lines_array.join("\n");
 		entity = new PageEntity([block],pageCommand,content);
 		pages.push(entity);
 		
@@ -938,10 +942,6 @@ DOCJS.Generate = function(urls,opt){
 			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
 				      + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>"))
 			    .append($("<tr><td></td><td class=\"brief\">"+method.getBrief()+"</td></tr>"));
-			/*
-			  if(m.returnvalue && m.returnvalue.type && m.returnvalue.brief)
-			  $methods.append("<tr><td></td><td class=\"brief\">Returns: "+m.returnvalue.brief+"</td></tr>");
-			*/
 		    }
 		    $sec.append($methods);
 		}
@@ -962,48 +962,6 @@ DOCJS.Generate = function(urls,opt){
 	    createSection("classes","Classes",contents);
 	    createMenuList("Classes",links);
 	}
-	
-	// Functions
-	/*
-	  var $ul = $("<ul></ul>");
-	var $details = $("<section id=\"functions\"><h1>Functions</h1></section>");
-	for(var j=0; j<functions.length; j++){
-	    var args = [];
-	    var f = functions[j];
-	    
-	    $funsec = $("<section></section>");
-
-	    // Construct signature
-	    for(var k in f.parameters){
-		var p = f.parameters[k];
-		args.push("<span class=\"datatype\">"+datatype2link(p.type)+ "</span> " + p.name);
-	    }
-	    $funsec.append("<h2 id=\""+f.name+"\"><span class=\"datatype\">"+(f.returnvalue ? datatype2link(f.returnvalue.type) : "") + "</span> " + f.name+" ( "+args.join(" , ")+" )</h2>")
-		.append("<p>"+f.brief+"</p>");
-	    
-	    // Parameter details
-	    $params = $("<table></table>");
-	    for(var k in f.parameters){
-		var p = f.parameters[k];
-		$params.append("<tr><th><span class=\"datatype\">"+(p.type ? datatype2link(p.type) : "&nbsp;")+ "</span> <span class=\"param\">" + p.name+"</span></th><td>"+p.brief+"</td></tr>");
-	    }
-	    $funsec.append($params);
-	    $details.append($funsec);
-	   
-	    // For the nav
-	    $fun = $("<li><a href=\"#"+f.name+"\">"+f.name+"</a></li>");
-	    if(j==0)
-		$ul = $("<ul class=\"function_overview\"></ul>");
-	    $ul.append($fun);
-	}
-	if(functions.length){
-	    $("nav")
-		.append("<h2>Functions</h2>")
-		.append($ul);
-	    $("article")
-		.append($details);
-	}
-    */	
 
 	// Errors
 	if(errors.length > 0){

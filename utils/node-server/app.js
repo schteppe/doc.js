@@ -29,6 +29,20 @@ app.get('/doc.js', function(req, res){
     });
 });
 
+app.get('/libs/pagedown/Markdown.Converter.js', function(req, res){
+    fs.readFile(__dirname + '/../../libs/pagedown/Markdown.Converter.js', 'utf8', function(err, text){
+	res.setHeader('Content-Type', "text/javascript");
+        res.send(text);
+    });
+});
+
+app.get('/libs/pagedown/Markdown.Sanitizer.js', function(req, res){
+    fs.readFile(__dirname + '/../../libs/pagedown/Markdown.Sanitizer.js', 'utf8', function(err, text){
+	res.setHeader('Content-Type', "text/javascript");
+        res.send(text);
+    });
+});
+
 app.get('/README.markdown', function(req, res){
     fs.readFile(__dirname + '/../../README.markdown', 'utf8', function(err, text){
 	//res.setHeader('Content-Type', "text/javascript");

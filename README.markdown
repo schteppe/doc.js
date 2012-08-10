@@ -126,8 +126,8 @@ Use the ```@page``` to create a page in your documentation.
 ```
 /**
  * @page My Personal Index Page
- * Everything but the page title is parsed to be the page content. Soon
- * there will be support for some markup language here too.
+ * *Everything* but the page command is parsed to be the page content. The page content can be formatted using **Markdown**.
+ * ### Markdown it is!
  */
 ```
 
