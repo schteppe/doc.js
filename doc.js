@@ -1,5 +1,5 @@
 /**
- * @page doc.js
+ * @page About
  * If you want to know how to USE doc.js, please see the [Github page](https://github.com/schteppe/doc.js).
  * 
  * The code for doc.js follows this algorithm:
@@ -42,7 +42,6 @@ DOCJS.Generate = function(urls,opt){
     };
     $.extend(options,opt);
     
-    setupLayout();
     loadBlocks(urls,function(blocks){
 	var entities = makeEntities(blocks);
 	updateHTML(entities);
@@ -51,23 +50,6 @@ DOCJS.Generate = function(urls,opt){
     var idCount = 0;
     function newId(){
 	return ++idCount;
-    }
-
-    function setupLayout(){
-	// Setup basic page layout
-	$("body")
-	    .html("")
-	    .append("<article>\
-<nav></nav>\
-<footer>\
-<a href=\"http://github.com/schteppe/doc.js\">github.com/schteppe/doc.js</a>\
-</footer>\
-</article>");
-
-	// Set repos header
-	$("nav")
-	    .append("<h1 id=\"libtitle\">"+options.title+"</h1>"+"<sup id=\"libversion\"></sup>")
-	    .append("<p id=\"libdesc\">"+options.description+"</p>");
     }
 
     // Utility functions
@@ -1108,57 +1090,17 @@ DOCJS.Generate = function(urls,opt){
 
     function updateHTML(doc){
 
-	// Convert a name to a link, or just return the input name
-	function nameToLink(name){
-	    var r = name;
-	    var entity = doc.nameToEntity(name);
-	    if(entity){
-		if(entity instanceof DOCJS.ClassEntity)
-		    r = "<a href=\"#classes-"+toNice(name)+"\">"+name+"</a>";
-	    }
-	    return r;
-	}
-
-	function markDown2HTML(m){
-	    if(typeof(Markdown)!="undefined"){
-		var converter = Markdown.getSanitizingConverter();
-		return converter.makeHtml(m);
-	    } else
-	    return "<div>"+m+"</div>"; // todo
-	}
-
-	// Create a section e.g. Classes, Functions, etc
-	function createSection(id,title,$content){
-	    var $title =  $("<h1>"+title+"</h1>");
-	    var $section = $("<section id=\""+id+"\"></section>");
-	    $section
-		.append($title);
-	    if($content.length)
-		for(var i=0; i<$content.length; i++)
-		    $section.append($content[i]);
-	    else
-		$section.append($content);
-	    $("article").append($section);
-	}
-	
-	// Create corresp. menu list
-	function createMenuList(id,title,items){
-	    var $ul = $("<ul></ul>");
-	    $("nav")
-		.append("<h2><a href=\"#"+id+"\">"+title+"</a></h2>")
-		.append($ul);
-	    for(var i=0; i<items.length; i++){
-		$li = $("<li></li>");
-		$li.append(items[i]);
-		$ul.append($li);
-	    }
-	}
+	setupLayout();
 
 	// Library info
 	if(doc.library){
 	    $("#libtitle").html(doc.library.getName());
 	    $("#libversion").html(doc.library.getVersion());
 	    $("#libdesc").html(doc.library.getBrief());
+	} else {
+	    $("#libtitle").html("Untitled");
+	    $("#libversion").html("0.0.0");
+	    $("#libdesc").html("An untitled library doc");
 	}
 	
 	// Pages
@@ -1340,6 +1282,71 @@ DOCJS.Generate = function(urls,opt){
 	    }
 	    createSection("errors","Errors ("+doc.errors.length+")",contents);
 	    createMenuList("errors","Errors ("+doc.errors.length+")",links);
+	}
+
+	
+	function setupLayout(){
+	    // Setup basic page layout
+	    $("body")
+		.html("")
+		.append("<article>\
+<nav></nav>\
+<footer>\
+<a href=\"http://github.com/schteppe/doc.js\">github.com/schteppe/doc.js</a>\
+</footer>\
+</article>");
+
+	    // Set repos header
+	    $("nav")
+		.append("<h1 id=\"libtitle\">"+options.title+"</h1>"+"<sup id=\"libversion\"></sup>")
+		.append("<p id=\"libdesc\">"+options.description+"</p>");
+	}
+
+
+	// Convert a name to a link, or just return the input name
+	function nameToLink(name){
+	    var r = name;
+	    var entity = doc.nameToEntity(name);
+	    if(entity){
+		if(entity instanceof DOCJS.ClassEntity)
+		    r = "<a href=\"#classes-"+toNice(name)+"\">"+name+"</a>";
+	    }
+	    return r;
+	}
+
+	function markDown2HTML(m){
+	    if(typeof(Markdown)!="undefined"){
+		var converter = Markdown.getSanitizingConverter();
+		return converter.makeHtml(m);
+	    } else
+	    return "<div>"+m+"</div>"; // todo
+	}
+
+	// Create a section e.g. Classes, Functions, etc
+	function createSection(id,title,$content){
+	    var $title =  $("<h1>"+title+"</h1>");
+	    var $section = $("<section id=\""+id+"\"></section>");
+	    $section
+		.append($title);
+	    if($content.length)
+		for(var i=0; i<$content.length; i++)
+		    $section.append($content[i]);
+	    else
+		$section.append($content);
+	    $("article").append($section);
+	}
+	
+	// Create corresp. menu list
+	function createMenuList(id,title,items){
+	    var $ul = $("<ul></ul>");
+	    $("nav")
+		.append("<h2><a href=\"#"+id+"\">"+title+"</a></h2>")
+		.append($ul);
+	    for(var i=0; i<items.length; i++){
+		$li = $("<li></li>");
+		$li.append(items[i]);
+		$ul.append($li);
+	    }
 	}
     }
     
