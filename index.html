@@ -12,9 +12,10 @@
   <body>
     <script>
       DOCJS.Generate(["doc.js"],{
-          showSourceUrl:true,
-          sourceUrlRemove:false,
-          sourceUrlPrepend:"https://github.com/schteppe/doc.js/blob/master/"
+          showSourceUrl : true,
+          formatSourceUrl : function(filename,lineNumber){
+            return "https://github.com/schteppe/doc.js/blob/master/"+filename+"#L"+lineNumber;
+          }
         });
     </script>
   </body>

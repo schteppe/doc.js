@@ -14,8 +14,8 @@
 
 /**
  * @library doc.js
- * @version 0.1.2
- * @brief An on-the-fly documentation generator for javascript
+ * @version 0.1.3
+ * @brief A doc generator written in JavaScript
  */
 var DOCJS = {};
 
@@ -26,10 +26,22 @@ var DOCJS = {};
  * @brief Generate Doc.js documentation.
  * @example
  * You use the function like this:
+ * 
  * ```
- * DOCJS.Generate(["file.js"]);
+ * DOCJS.Generate(["file.js"],options);
  * ```
+ * 
  * ...and then you're done!
+ * 
+ * The options looks like this by default:
+ * 
+ *     {
+ *       title :           "Hello World!",
+ *       description :     "My first Doc.js documentation",
+ *       showSourceUrl :   true,
+ *       formatSourceUrl : function(file, lineNum){ return file; }
+ *     }
+ * 
  * @endexample
  */
 DOCJS.Generate = function(urls,opt){
@@ -38,7 +50,9 @@ DOCJS.Generate = function(urls,opt){
     opt = opt || {};
     var options = {
 	title:"Hello World!", // Should these be fetched from the blocks?
-	description:"My first Doc.js documentation"
+	description:"My first Doc.js documentation",
+	showSourceUrl : true,
+        formatSourceUrl : function(filename,lineNumber){ return filename; },
     };
     $.extend(options,opt);
     
@@ -1327,10 +1341,10 @@ DOCJS.Generate = function(urls,opt){
 		.replace(/\/\*\*[\n\t\r]*/,"")
 		.replace(/[\n\t\r]*\*\/$/,"");
 
-	    // Remove starting star + spaces
+	    // Remove starting star and one space
 	    var lines = blocks[i].split("\n");
 	    for(var j=0; j<lines.length; j++)
-		lines[j] = lines[j].replace(/^[\s\t]*\*[\s\t]*/,"");
+		lines[j] = lines[j].replace(/^[\s\t]*\*\s{0,1}/,"");
 
 	    // Create block
 	    var block = new DOCJS.Block(lines.join("\n").replace(/[\n\s\t]*$/,""),raw,lineNumber);
@@ -1449,10 +1463,8 @@ DOCJS.Generate = function(urls,opt){
 
 		// Source
 		if(opt.showSourceUrl){
-		    var file = f.block[0].filename;
-		    if(opt.sourceUrlRemove)
-			file = file.replace(opt.sourceUrlRemove,"");
-		    var url = opt.sourceUrlPrepend + file + "#L" + f.block[0].lineNumber;
+		    var url = opt.formatSourceUrl(f.block[0].filename,
+						  f.block[0].lineNumber);
 		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
 		}
 
@@ -1533,10 +1545,8 @@ DOCJS.Generate = function(urls,opt){
 
 		// Source
 		if(opt.showSourceUrl){
-		    var file = c.block[0].filename;
-		    if(opt.sourceUrlRemove)
-			file = file.replace(opt.sourceUrlRemove,"");
-		    var url = opt.sourceUrlPrepend + file + "#L" + c.block[0].lineNumber;
+		    var url = opt.formatSourceUrl(c.block[0].filename,
+						  c.block[0].lineNumber);
 		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
 		}
 
