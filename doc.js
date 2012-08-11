@@ -25,11 +25,7 @@ var DOCJS = {};
  * @param Object opt
  * @brief Generate Doc.js documentation.
  * @example
- * You use the function like this:
- * 
- * ```
- * DOCJS.Generate(["file.js"],options);
- * ```
+ * You use the function like this: ```DOCJS.Generate(["file.js"],options);```
  * 
  * ...and then you're done!
  * 

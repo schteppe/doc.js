@@ -172,3 +172,21 @@ footer a {
     color: white;
     text-decoration:none;
 }
+
+#content pre {
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    background: #faf8f0;
+}
+#content pre > code {
+    display: block;
+    padding: 0.5em 1em;
+}
+#content code {
+    display: inline;
+    padding: 0.2em 0.5em;
+}
+code {
+    border: 1px solid #bebab0;
+}
