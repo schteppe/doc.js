@@ -22,16 +22,17 @@ app.get('/', function(req, res){
     });
 });
 
-app.get('/doc.js', function(req, res){
-    fs.readFile(__dirname + '/../../doc.js', 'utf8', function(err, text){
+app.get(/\/([A-Za-z0-9]+).js$/, function(req, res){
+    fs.readFile(__dirname + '/../../'+req.params[0]+'.js', 'utf8', function(err, text){
 	res.setHeader('Content-Type', "text/javascript");
         res.send(text);
     });
 });
 
-app.get('/cannon.js', function(req, res){
-    fs.readFile(__dirname + '/../../cannon.js', 'utf8', function(err, text){
-	res.setHeader('Content-Type', "text/javascript");
+app.get(/\/templates\/(.*).css$/, function(req, res){
+    var file = __dirname + '/../../templates/'+req.params[0]+'.css';
+    fs.readFile(file, 'utf8', function(err, text){
+	res.setHeader('Content-Type', "text/css");
         res.send(text);
     });
 });
