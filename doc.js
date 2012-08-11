@@ -42,9 +42,9 @@ DOCJS.Generate = function(urls,opt){
     };
     $.extend(options,opt);
     
-    loadBlocks(urls,function(blocks){
-	var entities = makeEntities(blocks);
-	updateHTML(entities);
+    loadBlocks(urls,function(blocks,errors){
+	var doc = makeEntities(blocks,errors);
+	updateHTML(doc);
     });
 
     var idCount = 0;
@@ -458,8 +458,12 @@ DOCJS.Generate = function(urls,opt){
     
 
     // Assembles Entity's out of Block's
-    function makeEntities(blocks){
+    function makeEntities(blocks,errors){
 	var doc = new DOCJS.Documentation();
+
+	// Add errors to the doc
+	for(var i=0; i<errors.length; i++)
+	    doc.errors.push(errors[i]);
 
 	// Assemble Entities
 	for(var i=0; i<blocks.length; i++){
@@ -634,6 +638,10 @@ DOCJS.Generate = function(urls,opt){
 		var author = new DOCJS.AuthorCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(author);
+	    } else if(line.match(/@author/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @author but did not match the command spec \"@author text\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -667,6 +675,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.BriefCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@brief/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @brief but did not match the command spec \"@brief text\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -700,6 +712,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.ClassCommand(block,result[1]);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@class/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @class but did not match the command spec \"@class className\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -721,6 +737,7 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.Block block
      * @param Array errors
      * @return Array
+     * @todo How to check error on that regexp?
      */
     DOCJS.DescriptionCommand.parse = function(block,errors){
 	var commands=[], src = block.getUnparsedLines().join("\n");
@@ -773,6 +790,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.EventCommand(block,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	   } else if(line.match(/@event/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @event but did not match the command spec \"@event typeName [description]\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -805,6 +826,10 @@ DOCJS.Generate = function(urls,opt){
 	    var command = new DOCJS.ExampleCommand(block,content);
 	    block.markChunkAsParsed(result[0]);
 	    commands.push(command);
+	} else if(src.match(/@example/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Block contained @example but did not match the command spec \"@example markupText @endexample\". The input: "+line));
 	}
 	return commands;
     }
@@ -837,6 +862,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.ExtendsCommand(block,name);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@extends/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @extends but did not match the command spec \"@extends className\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -877,6 +906,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.FunctionCommand(block,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/(@function)|(@fn)/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @function or @fn but did not match the command spec \"@function|fn functionName [description]\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -910,6 +943,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.MemberofCommand(block,classname);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@member[oO]f/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @memberof but did not match the command spec \"@memberof className\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -941,6 +978,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.LibraryCommand(block,libname);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@library/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @library but did not match the command spec \"@library libraryName\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -976,6 +1017,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.MethodCommand(block,methodname);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@method/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @method but did not match the command spec \"@method methodName\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1009,6 +1054,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.PageCommand(block,pagename);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@page/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @page but did not match the command spec \"@page text\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1048,6 +1097,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.ParamCommand(block,dataType,paramName,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@param/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @param but did not match the command spec \"@param dataType paramName [description]\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1088,6 +1141,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.PropertyCommand(block,dataType,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@property/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @property but did not match the command spec \"@property dataType propertyName [description]\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1128,6 +1185,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.ReturnCommand(block,dataType,name,desc);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@return[s]{0,1}/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @return but did not match the command spec \"@return dataType [description]\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1161,6 +1222,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.SeeCommand(block,text);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@see/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @see but did not match the command spec \"@see text\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1196,6 +1261,10 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.TodoCommand(block,text);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@todo/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @todo but did not match the command spec \"@todo text\". The input: "+line));
 	    }
 	}
 	return commands;
@@ -1230,13 +1299,17 @@ DOCJS.Generate = function(urls,opt){
 		var command = new DOCJS.VersionCommand(block,text);
 		block.markLineAsParsed(j);
 		commands.push(command);
+	    } else if(line.match(/@version/)){
+		errors.push(new DOCJS.ErrorReport(block.filename,
+						  block.localToGlobalLineNumber(j),
+						  "Line contained @version but did not match the command spec \"@version text\". The input: "+line));
 	    }
 	}
 	return commands;
     }
 
     // Parse blocks from a file
-    function parseBlocks(src,file){
+    function parseBlocks(src,file,errors){
 	var blockObjects = [];
 	// (.(?!\*\/))* is negative lookahead, anything not followed by */
 	var blocks = src.match(/\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];
@@ -1261,7 +1334,6 @@ DOCJS.Generate = function(urls,opt){
 	    // Create block
 	    var block = new DOCJS.Block(lines.join("\n").replace(/[\n\s\t]*$/,""),raw,lineNumber);
 	    block.filename = file;
-	    var errors = [];
 
 	    // Parse commands from block
 	    block.author =   DOCJS.AuthorCommand.parse(block,errors);
@@ -1466,8 +1538,8 @@ DOCJS.Generate = function(urls,opt){
 		    .append($("<pre>"+todo.getContent()+"</pre>"));
 		contents.push($sec);
 	    }
-	    createSection("todos","Todos ("+todos.length+")",contents);
-	    createMenuList("todos","Todos ("+todos.length+")",links);
+	    createSection("todos","Todos ("+doc.todos.length+")",contents);
+	    createMenuList("todos","Todos ("+doc.todos.length+")",links);
 	}
 
 	// Errors
@@ -1553,6 +1625,7 @@ DOCJS.Generate = function(urls,opt){
     function loadBlocks(urls,callback){
 	// Get the files
 	var numLoaded = 0;
+	var errors = [];
 	for(var i=0; i<urls.length; i++){
 	    var file = urls[i];
 	    $.ajax({
@@ -1560,16 +1633,16 @@ DOCJS.Generate = function(urls,opt){
 		dataType:'text',
 		async:true,
 		success:function(data){
-		    var blocks = parseBlocks(data,file);
+		    var blocks = parseBlocks(data,file,errors);
 		    numLoaded++;
 		    if(numLoaded==urls.length)
-			callback(blocks);
+			callback(blocks,errors);
 		},
 		error:function(){
 		    // todo
 		    numLoaded++;
 		    if(numLoaded==urls.length)
-			callback(blocks);
+			callback(blocks,errors);
 		}
 	    });
 	}
