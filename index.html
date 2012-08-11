@@ -11,7 +11,11 @@
   </head>
   <body>
     <script>
-      DOCJS.Generate(["doc.js"]);
+      DOCJS.Generate(["doc.js"],{
+          showSourceUrl:true,
+          sourceUrlRemove:false,
+          sourceUrlPrepend:"https://github.com/schteppe/doc.js/blob/master/"
+        });
     </script>
   </body>
 </html>

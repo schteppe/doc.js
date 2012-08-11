@@ -14,7 +14,7 @@
 
 /**
  * @library doc.js
- * @version 0.1.1
+ * @version 0.1.2
  * @brief An on-the-fly documentation generator for javascript
  */
 var DOCJS = {};
@@ -1520,6 +1520,15 @@ DOCJS.Generate = function(urls,opt){
 			// Example
 			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>"));
 		    }
+		}
+
+		// Source
+		if(opt.showSourceUrl){
+		    var file = c.block[0].filename;
+		    if(opt.sourceUrlRemove)
+			file = file.replace(opt.sourceUrlRemove,"");
+		    var url = opt.sourceUrlPrepend + file + "#L" + c.block[0].lineNumber;
+		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
 		}
 
 		contents.push($sec);
