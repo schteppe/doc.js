@@ -989,7 +989,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
-     * @function DOCJS.MethodCommand
+     * @class DOCJS.MethodCommand
      * @param DOCJS.Block block
      * @param string name
      * @return Array
@@ -1152,7 +1152,7 @@ DOCJS.Generate = function(urls,opt){
     }
 
     /**
-     * @function DOCJS.ReturnCommand
+     * @class DOCJS.ReturnCommand
      * @param DOCJS.Block block
      * @param string dataType
      * @param string description
@@ -1445,6 +1445,15 @@ DOCJS.Generate = function(urls,opt){
 			// Example
 			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(f.getExampleText(j))+"</div>"));
 		    }
+		}
+
+		// Source
+		if(opt.showSourceUrl){
+		    var file = f.block[0].filename;
+		    if(opt.sourceUrlRemove)
+			file = file.replace(opt.sourceUrlRemove,"");
+		    var url = opt.sourceUrlPrepend + file + "#L" + f.block[0].lineNumber;
+		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
 		}
 
 		contents.push($sec);

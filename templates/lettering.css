@@ -64,7 +64,6 @@ nav li a {
     padding: 5px 0px 6px 12px;
     text-align: left;
     text-decoration: none;
-    text-transform: capitalize;
     font-size: 14px;
     font-weight: normal;
     vertical-aling:middle;
@@ -121,26 +120,6 @@ nav li a:hover {
     margin-top:30px;
     margin-bottom:60px;
 }
-/*
-#content section h2 {
-    color: #79350A;
-    border: none;
-    text-transform: lowercase;
-    font-family: Georgia, "Times New Roman", Times, serif;
-    letter-spacing: -.5px;
-    font-size: 2.8em;
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    font-weight: normal;
-    display: block;
-    font-size: 1.5em;
-    -webkit-margin-before: 0.83em;
-    -webkit-margin-after: 0.83em;
-    -webkit-margin-start: 0px;
-    -webkit-margin-end: 0px;
-    font-weight: bold;
-}*/
 
 #content a {
     text-decoration: none;
