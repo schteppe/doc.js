@@ -198,7 +198,12 @@ DOCJS.Generate = function(urls,opt){
      * @brief Base class for entities.
      */
     DOCJS.Entity = function(block,entityName){
-	this.block = block; // where it was defined
+	/**
+	 * @property DOCJS.Block block
+	 * @memberof DOCJS.Entity
+	 * @brief The block where where the Entity was defined
+	 */
+	this.block = block;
 
 	if(!(entityName in entityCounter))
 	    entityCounter[entityName] = 0;
@@ -239,7 +244,17 @@ DOCJS.Generate = function(urls,opt){
 				    exampleCommand // optional
 				   ){
 	DOCJS.Entity.call(this,block);
+	/**
+	 * @method getName
+	 * @memberof DOCJS.FunctionEntity
+	 * @return string Returns string or false on failure.
+	 */
 	this.getName = function(){ return functionCommand ? functionCommand.getName() : false; };
+	/**
+	 * @method getBrief
+	 * @memberof DOCJS.FunctionEntity
+	 * @return string Returns string or false on failure.
+	 */
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
 
@@ -301,7 +316,7 @@ DOCJS.Generate = function(urls,opt){
 	this.getParamDataType = function(i){ return paramCommands[i].getDataType(); };
 	this.getParamName = function(i){ return paramCommands[i].getName(); };
 
-	this.getBrief = function(){ return briefCommand.getContent(); };
+	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
 	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
     }
 
@@ -533,12 +548,12 @@ DOCJS.Generate = function(urls,opt){
 
 	    } else if(block.method.length){ // Method
 		if(block.memberof.length==1){
-		    entity = new MethodEntity([block],
-					      block.method[0],
-					      block.memberof[0],
-					      block.param,
-					      block.brief[0],
-					      block.ret[0]);
+		    entity = new DOCJS.MethodEntity([block],
+						    block.method[0],
+						    block.memberof[0],
+						    block.param,
+						    block.brief[0],
+						    block.ret[0]);
 		    doc.methods.push(entity);
 		}
 
@@ -549,11 +564,11 @@ DOCJS.Generate = function(urls,opt){
 						    block.lineNumber,
 						    "A @property block requires exactly 1 @memberof command, got "+block.memberof.length+"."));
 		else {
-		    entity = new PropertyEntity([block],
-						block.property[0],
-						block.memberof[0],
-						block.brief[0],
-						block.desc[0]);
+		    entity = new DOCJS.PropertyEntity([block],
+						      block.property[0],
+						      block.memberof[0],
+						      block.brief[0],
+						      block.desc[0]);
 		    doc.properties.push(entity);
 		}
 	    }
@@ -1002,7 +1017,6 @@ DOCJS.Generate = function(urls,opt){
      * @class DOCJS.MethodCommand
      * @param DOCJS.Block block
      * @param string name
-     * @return Array
      */
     DOCJS.MethodCommand = function(block,name){
 	DOCJS.Command.call(this,block);
@@ -1166,7 +1180,6 @@ DOCJS.Generate = function(urls,opt){
      * @param DOCJS.Block block
      * @param string dataType
      * @param string description
-     * @return Array
      */
     DOCJS.ReturnCommand = function(block,dataType,description){
 	DOCJS.Command.call(this,block);
@@ -1509,13 +1522,13 @@ DOCJS.Generate = function(urls,opt){
 		    for(var k=0; k<numMethods; k++){
 			var method = c.getMethod(k);
 			var params = [];
-			for(var k=0; k<method.numParams(); k++){
-			    params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(k))+"</span>" + " " + method.getParamName(k));
+			for(var l=0; l<method.numParams(); l++){
+			    params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(l))+"</span>" + " " + method.getParamName(l));
 			}
 			$methods
 			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
 				      + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>"))
-			    .append($("<tr><td></td><td class=\"brief\">"+method.getBrief()+"</td></tr>"));
+			    .append($("<tr><td></td><td class=\"brief\">"+(method.getBrief() ? method.getBrief() : "")+"</td></tr>"));
 		    }
 		    $sec.append($methods);
 		}
@@ -1526,7 +1539,7 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($("<h3>Properties</h3>"));
 		    var $properties = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<numProperties; k++){
-			$properties.append("<tr><td class=\"datatype\">"+(c.getPropertyDataType(k))+"</td><td>" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
+			$properties.append("<tr><td class=\"datatype\">"+nameToLink(c.getPropertyDataType(k))+"</td><td class=\"propertyName\">" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
 		    }
 		    $sec.append($properties);
 		}
