@@ -126,13 +126,18 @@ nav li a:hover {
     color: #A13B30;
 }
 
+td {
+    vertical-align: top;
+}
+
 td.datatype {
     text-align:right;
     padding-right:8px;
 }
 
-td.propertyName {
+td.propertyName, td.paramName {
     padding-right:10px;
+    font-weight:bold;
 }
 
 p.brief {

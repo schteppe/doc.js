@@ -645,13 +645,17 @@ DOCJS.Generate = function(urls,opt){
      */
     DOCJS.AuthorCommand = function(block,content){
 	DOCJS.Command.call(this,block);
+	/**
+	 * @method getContent
+	 * @memberof DOCJS.AuthorCommand
+	 * @return string
+	 */
 	this.getContent = function(){ return content; };
-	this.setContent = function(n){ content=n; };
     }
     /**
      * @function DOCJS.AuthorCommand.parse
-     * @param DOCJS.Block block
-     * @param Array errors
+     * @param DOCJS.Block block The block that the command was defined in.
+     * @param Array errors An array that in case or error will be filled with DOCJS.ErrorReport objects.
      * @return Array
      * @brief Parse an Author command from a block
      */
@@ -1451,7 +1455,7 @@ DOCJS.Generate = function(urls,opt){
 		    $sec.append($("<h3>Parameters</h3>"));
 		    var $params = $("<table></table>").addClass("member_overview");
 		    for(var k=0; k<f.numParams(); k++){
-			$params.append("<tr><td class=\"datatype\">"+nameToLink(f.getParamDataType(k) ? f.getParamDataType(k) : "")+"</td><td>" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
+			$params.append("<tr><td class=\"datatype\">"+nameToLink(f.getParamDataType(k) ? f.getParamDataType(k) : "")+"</td><td class=\"paramName\">" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
 		    }
 		    $sec.append($params);
 		}
