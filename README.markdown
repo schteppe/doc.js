@@ -51,6 +51,7 @@ Commands are parsed by Doc.js and they are later assembled into things in your d
 @method methodName [description]
 @page pageName
 @param dataType paramName [description]
+@property dataType propertyName
 @return|returns dataType [description]
 @see infoText
 @todo [todoText]
