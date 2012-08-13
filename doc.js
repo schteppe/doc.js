@@ -91,11 +91,11 @@ DOCJS.Generate = function(urls,opt){
 	    return makeBody();
 
 	    function makeBody(){
-		return "<article>"+makeNav()+makeContent()+"</article>"+makeFooter();
+		return ("<article>"+makeNav()+makeContent()+"</article>"+makeFooter());
 	    }
 
 	    function makeNav(){
-		var nav = "";
+		var nav = "<nav>";
 		var desc = (doc.library ? doc.library.getBrief() : ""),
 		version = (doc.library ? doc.library.getVersion() : ""), 
 		title = (doc.library ? doc.library.getName() : "Hello World!");
@@ -140,6 +140,7 @@ DOCJS.Generate = function(urls,opt){
 		if(doc.errors.length){
 		    nav += "<h2>Errors ("+doc.errors.length+")</h2>";
 		}
+		nav += "</nav>";
 
 		return nav;
 	    }
@@ -236,115 +237,100 @@ DOCJS.Generate = function(urls,opt){
 	    
 	    // Classes
 	    function makeClasses(){
-		if(doc.classes.length > 0){
-		    var links = [], contents = [];
-		    for(var i=0; i<doc.classes.length; i++){
-			var c = doc.classes[i];
-			
-			var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
-			$sec.append($("<h2>"+c.getName()+"</h2>"));
-
-			// Brief
-			if(c.getBrief())
-			    $sec.append($("<p class=\"brief\">"+c.getBrief()+"</p>"));
-
-			// Inheritance list
-			var extendsList = doc.getInheritanceList(c);
-			extendsList.shift();
-			if(extendsList.length >= 1){
-			    for(var j=0; j<extendsList.length; j++)
-				extendsList[j] = nameToLink(extendsList[j]);
-			    $sec.append($("<p>Extends "+extendsList.join(" → ")+"</p>"));
-			}
-
-			// Constructor
-			var args = [];
-			for(var j=0; j<c.numParams(); j++)
-			    args.push("<span class=\"datatype\">"+nameToLink(c.getParamDataType(j))+"</span> " + c.getParamName(j));
-			$sec.append($("<h3>Constructor</h3>"));
-			$sec.append($("<p>"+c.getName() + " ( " + args.join(" , ")+" )</p>"));
-
-			// Method overview table
-			var numMethods = c.numMethods();
-			if(numMethods>0){
-			    $sec.append($("<h3>Methods</h3>"));
-			    var $methods = $("<table></table>").addClass("member_overview");
-			    for(var k=0; k<numMethods; k++){
-				var method = c.getMethod(k);
-				var params = [];
-				for(var l=0; l<method.numParams(); l++){
-				    params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(l))+"</span>" + " " + method.getParamName(l));
-				}
-				$methods
-				    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
-					      + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>"))
-				    .append($("<tr><td></td><td class=\"brief\">"+(method.getBrief() ? method.getBrief() : "")+"</td></tr>"));
+		var html = "";
+		for(var i=0; i<doc.classes.length; i++){
+		    var c = doc.classes[i];
+		    
+		    html += ("<section id=\"classes-"+toNice(c.getName())+"\"></section>"+
+			     "<h2>"+c.getName()+"</h2>");
+		    
+		    // Brief
+		    if(c.getBrief())
+			html += ("<p class=\"brief\">"+c.getBrief()+"</p>");
+		    
+		    // Inheritance list
+		    var extendsList = doc.getInheritanceList(c);
+		    extendsList.shift();
+		    if(extendsList.length >= 1){
+			for(var j=0; j<extendsList.length; j++)
+			    extendsList[j] = nameToLink(extendsList[j]);
+			html += ("<p>Extends "+extendsList.join(" → ")+"</p>");
+		    }
+		    
+		    // Constructor
+		    var args = [];
+		    for(var j=0; j<c.numParams(); j++)
+			args.push("<span class=\"datatype\">"+nameToLink(c.getParamDataType(j))+"</span> " + c.getParamName(j));
+		    html += ("<h3>Constructor</h3>" +
+			     "<p>"+c.getName() + " ( " + args.join(" , ")+" )</p>");
+		    
+		    // Method overview table
+		    var numMethods = c.numMethods();
+		    if(numMethods>0){
+			html += ("<h3>Methods</h3>"+
+				 "<table class=\"member_overview\">");
+			for(var k=0; k<numMethods; k++){
+			    var method = c.getMethod(k);
+			    var params = [];
+			    for(var l=0; l<method.numParams(); l++){
+				params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(l))+"</span>" + " " + method.getParamName(l));
 			    }
-			    $sec.append($methods);
+			    html += ("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
+				     + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>" +
+				     "<tr><td></td><td class=\"brief\">"+(method.getBrief() ? method.getBrief() : "")+"</td></tr>");
 			}
-			
-			// Properties
-			var numProperties = c.numProperties();
-			if(numProperties>0){
-			    $sec.append($("<h3>Properties</h3>"));
-			    var $properties = $("<table></table>").addClass("member_overview");
-			    for(var k=0; k<numProperties; k++){
-				$properties.append("<tr><td class=\"datatype\">"+nameToLink(c.getPropertyDataType(k))+"</td><td class=\"propertyName\">" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
-			    }
-			    $sec.append($properties);
+		    }
+		    
+		    // Properties
+		    var numProperties = c.numProperties();
+		    if(numProperties>0){
+			html += ("<h3>Properties</h3>"+
+				 "<table class=\"member_overview\">");
+			for(var k=0; k<numProperties; k++){
+			    html += ("<tr><td class=\"datatype\">"+nameToLink(c.getPropertyDataType(k))+"</td><td class=\"propertyName\">" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
 			}
 
 			// Examples
 			if(c.numExamples()){
 			    for(var j=0; j<c.numExamples(); j++){
 				// Example
-				$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>"));
+				html += ("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>");
 			    }
 			}
-
+			
 			// Source
 			if(opt.showSourceUrl){
 			    var url = opt.formatSourceUrl(c.block[0].filename,
 							  c.block[0].lineNumber);
-			    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
+			    html += ("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>");
 			}
-
-			contents.push($sec);
-			links.push($("<a href=\"#classes-"+toNice(c.getName())+"\">"+c.getName()+"</a>"));
 		    }
-		    createSection("classes","Classes",contents);
-		    createMenuList("classes","Classes",links);
 		}
+		return html;
 	    }
 
 	    // Todos
 	    function makeTodos(){
-		if(doc.todos.length > 0){
-		    var links = [], contents = [];
-		    for(var i=0; i<doc.todos.length; i++){
-			var todo = doc.todos[i];
-			var $sec = $("<div id=\"todos-"+todo.id+"\"></div>")
-			    .append($("<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>"))
-			    .append($("<p>"+todo.getContent()+"</p>"));
-			contents.push($sec);
-		    }
-		    createSection("todos","Todos ("+doc.todos.length+")",contents);
-		    createMenuList("todos","Todos ("+doc.todos.length+")",links);
+		var html = "";
+		for(var i=0; i<doc.todos.length; i++){
+		    var todo = doc.todos[i];
+		    html += ("<div id=\"todos-"+todo.id+"\"></div>" +
+			     "<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>" +
+			     "<p>"+todo.getContent()+"</p>");
 		}
+		return html;
+	    }
 
-		// Errors
-		if(doc.errors.length > 0){
-		    var links = [], contents = [];
-		    for(var i=0; i<doc.errors.length; i++){
-			var error = doc.errors[i];
-			var $sec = $("<div id=\"errors-"+error.id+"\"></div>")
-			    .append($("<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>"))
-			    .append($("<p>"+error.message+"</p>"));
-			contents.push($sec);
-		    }
-		    createSection("errors","Errors ("+doc.errors.length+")",contents);
-		    createMenuList("errors","Errors ("+doc.errors.length+")",links);
+	    // Errors
+	    function makeErrors(){
+		var html = "";
+		for(var i=0; i<doc.errors.length; i++){
+		    var error = doc.errors[i];
+		    html += ("<div id=\"errors-"+error.id+"\"></div>" +
+			     "<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>" + 
+			     "<p>"+error.message+"</p>");
 		}
+		return html;
 	    }
 	    
 	    // Convert a name to a link, or just return the input name
@@ -382,7 +368,9 @@ DOCJS.Generate = function(urls,opt){
     
     loadBlocks(urls,function(blocks,errors){
 	var doc = makeEntities(blocks,errors);
+	var html = (options.renderer.render(doc));
 	updateHTML(doc);
+	//$("body").html(html);
     });
 
     var idCount = 0;
@@ -1965,7 +1953,6 @@ DOCJS.Generate = function(urls,opt){
 		.append("<h1><span id=\"libtitle\">"+options.title+"</span><sup id=\"libversion\"></sup></h1>")
 		.append("<p id=\"libdesc\">"+options.description+"</p>");
 	}
-
 
 	// Convert a name to a link, or just return the input name
 	function nameToLink(name){
