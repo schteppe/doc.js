@@ -154,14 +154,15 @@ DOCJS.Generate = function(urls,opt){
 	    }
 	    
 	    function makePages(){
-		var html = "<section id=\"pages\">";
+		var html = "";
 		if(doc.pages.length > 0){
+		    html += "<section id=\"pages\"><h1>Pages</h1>";
 		    for(var i=0; i<doc.pages.length; i++){
 			var page = doc.pages[i];
 			html += ("<section id=\"pages-"+toNice(page.getName())+"\"><h2>"+page.getName()+"</h2>"+markDown2HTML(page.getContent())+"</section>");
 		    }
+		    html += "</section>";
 		}
-		html += "</section>";
 		return html;
 	    }
 
@@ -169,6 +170,7 @@ DOCJS.Generate = function(urls,opt){
 	    function makeFunctions(){
 		var html = "";
 		if(doc.functions.length > 0){
+		    html += "<section id=\"functions\"><h1>Functions</h1>";
 		    for(var i=0; i<doc.functions.length; i++){
 			var f = doc.functions[i];
 			html += ("<section id=\"functions-"+toNice(f.getName())+"\"><h2>"+f.getName()+"</h2>");
@@ -231,6 +233,7 @@ DOCJS.Generate = function(urls,opt){
 			
 			html += "</section>";
 		    }
+		    html += "</section>";
 		}
 		return html;
 	    }
@@ -238,10 +241,12 @@ DOCJS.Generate = function(urls,opt){
 	    // Classes
 	    function makeClasses(){
 		var html = "";
+		if(doc.classes.length)
+		    html += "<section id=\"classes\"><h1>Classes</h1>";
 		for(var i=0; i<doc.classes.length; i++){
 		    var c = doc.classes[i];
 		    
-		    html += ("<section id=\"classes-"+toNice(c.getName())+"\"></section>"+
+		    html += ("<section id=\"classes-"+toNice(c.getName())+"\">"+
 			     "<h2>"+c.getName()+"</h2>");
 		    
 		    // Brief
@@ -276,9 +281,10 @@ DOCJS.Generate = function(urls,opt){
 				params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(l))+"</span>" + " " + method.getParamName(l));
 			    }
 			    html += ("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
-				     + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>" +
+				     + "<span class=\"methodName\">"+method.getName() + "</span> ( " +params.join(" , ")+ " )</td></tr>" +
 				     "<tr><td></td><td class=\"brief\">"+(method.getBrief() ? method.getBrief() : "")+"</td></tr>");
 			}
+			html += "</table>";
 		    }
 		    
 		    // Properties
@@ -289,23 +295,29 @@ DOCJS.Generate = function(urls,opt){
 			for(var k=0; k<numProperties; k++){
 			    html += ("<tr><td class=\"datatype\">"+nameToLink(c.getPropertyDataType(k))+"</td><td class=\"propertyName\">" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
 			}
+			html += "</table>";
+		    }
 
-			// Examples
-			if(c.numExamples()){
-			    for(var j=0; j<c.numExamples(); j++){
-				// Example
-				html += ("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>");
-			    }
-			}
-			
-			// Source
-			if(opt.showSourceUrl){
-			    var url = opt.formatSourceUrl(c.block[0].filename,
-							  c.block[0].lineNumber);
-			    html += ("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>");
+		    // Examples
+		    if(c.numExamples()){
+			for(var j=0; j<c.numExamples(); j++){
+			    // Example
+			    html += ("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>");
 			}
 		    }
+		    
+		    // Source
+		    if(opt.showSourceUrl){
+			var url = opt.formatSourceUrl(c.block[0].filename,
+						      c.block[0].lineNumber);
+			html += ("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>");
+		    }
+
+		    html += "</section>";
 		}
+
+		if(doc.classes.length)
+		    html += "</section>";
 		return html;
 	    }
 
@@ -313,10 +325,14 @@ DOCJS.Generate = function(urls,opt){
 	    function makeTodos(){
 		var html = "";
 		for(var i=0; i<doc.todos.length; i++){
+		    if(i==0)
+			html += "<section id=\"todos\"><h1>Todos ("+doc.todos.length+")</h1>";
 		    var todo = doc.todos[i];
-		    html += ("<div id=\"todos-"+todo.id+"\"></div>" +
+		    html += ("<div id=\"todos-"+todo.id+"\">" +
 			     "<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>" +
-			     "<p>"+todo.getContent()+"</p>");
+			     "<p>"+todo.getContent()+"</p></div>");
+		    if(i==doc.todos.length-1)
+			html += "</section>";
 		}
 		return html;
 	    }
@@ -325,10 +341,14 @@ DOCJS.Generate = function(urls,opt){
 	    function makeErrors(){
 		var html = "";
 		for(var i=0; i<doc.errors.length; i++){
+		    if(i==0)
+			html += "<section id=\"errors\"><h1>Errors ("+doc.errors.length+")</h1>";
 		    var error = doc.errors[i];
-		    html += ("<div id=\"errors-"+error.id+"\"></div>" +
+		    html += ("<div id=\"errors-"+error.id+"\">" +
 			     "<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>" + 
-			     "<p>"+error.message+"</p>");
+			     "<p>"+error.message+"</p></div>");
+		    if(i==doc.errors.length-1)
+			html += "</section>";
 		}
 		return html;
 	    }
