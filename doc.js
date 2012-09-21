@@ -14,7 +14,7 @@
 
 /**
  * @library doc.js
- * @version 0.1.3
+ * @version 0.1.4
  * @brief A doc generator written in JavaScript
  */
 var DOCJS = {};
