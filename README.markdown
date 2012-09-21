@@ -35,6 +35,86 @@ To make a live doc.js documentation site, add doc.js and this HTML file to a pub
 
 Now open that HTML file in the browser. Done!
 
+## More examples
+### Function
+```
+/**
+ * @fn myFunc Description is optional.
+ * @brief This is an optional description of myFunc()
+ * @description A longer description
+ * @param string myParam This is an optional description of myParam
+ * @author schteppe
+ * @author secondAuthor and contact info here, if you like
+ * @return int Optional description of return value. Command begins with datatype.
+ */
+```
+
+### Class
+Use ```@class``` to describe a class and its constructor.
+```
+/**
+ * @class myClass
+ * @brief This is a description of the class myClass
+ * @param int myConstructorParameter
+ * @event eventWithoutDescription
+ * @event eventName An event that an instance of the class dispatches.
+ */
+```
+
+### Method
+Use ```@method``` to describe a method belonging to a class.
+```
+/**
+ * @method myMethod
+ * @memberof myClass
+ * @brief This is a method in myClass.
+ * @param int param1
+ * @param int param2
+ * @return float
+ */
+```
+Using single-line comment block (this will not be as informative as the above though):
+```
+/// @method myMethod
+```
+
+### Property
+Use ```@property``` to document a property of your class.
+```
+/**
+ * @property int myProperty
+ * @memberof myClass
+ * @brief This is a property in myClass.
+ */
+```
+Using single-line comment block (this will not be as informative as the above though):
+```
+/// @property int myProperty
+```
+
+### Page
+Use the ```@page``` to create a page in your documentation.
+
+```
+/**
+ * @page My Personal Index Page
+ * *Everything* but the page command is parsed to be the page content. The page content can be formatted
+ * using **Markdown**.
+ * ### Markdown it is!
+ */
+```
+
+## Comment blocks
+Currently slash-star and single-line triple-slash comment blocks are supported:
+```
+/**
+ * Commands go here...
+ */
+```
+```
+/// A single command goes here
+```
+
 ## Commands
 Commands are parsed by Doc.js and they are later assembled into things in your documentation. Available commands and their usage are listed below. The ```|``` sign means "or", for example ```@function|fn``` means that ```@function``` is equivalent to ```@fn```. Things in brackets are ```[optional]```.
 ```
@@ -58,17 +138,6 @@ Commands are parsed by Doc.js and they are later assembled into things in your d
 @version versionNumber
 ```
 
-## Comment blocks
-Currently slash-star and single-line triple-slash comment blocks are supported:
-```
-/**
- * Commands go here...
- */
-```
-```
-/// A single command goes here
-```
-
 ### Command combinations
 A comment block has got a set of commands. To document an entity, you must specify a valid set of commands. Using a command may require another command to make a valid block, and there are some optional commands.
 ```
@@ -81,78 +150,10 @@ Command      Requires    Optional
 * = May be specified more than once in the same block.
 ```
 
-### Examples
-#### Function
-```
-/**
- * @fn myFunc Description is optional.
- * @brief This is an optional description of myFunc()
- * @description A longer description
- * @param string myParam This is an optional description of myParam
- * @author schteppe
- * @author secondAuthor and contact info here, if you like
- * @return int Optional description of return value. Command begins with datatype.
- */
-```
-
-#### Class
-Use ```@class``` to describe a class and its constructor.
-```
-/**
- * @class myClass
- * @brief This is a description of the class myClass
- * @param int myConstructorParameter
- * @event eventWithoutDescription
- * @event eventName An event that an instance of the class dispatches.
- */
-```
-
-#### Method
-Use ```@method``` to describe a method belonging to a class.
-```
-/**
- * @method myMethod
- * @memberof myClass
- * @brief This is a method in myClass.
- * @param int param1
- * @param int param2
- * @return float
- */
-```
-Using single-line comment block (this will not be as informative as the above though):
-```
-/// @method myMethod
-```
-
-#### Property
-Use ```@property``` do document a property of your class.
-```
-/**
- * @property int myProperty
- * @memberof myClass
- * @brief This is a property in myClass.
- */
-```
-Using single-line comment block (this will not be as informative as the above though):
-```
-/// @property int myProperty
-```
-
-#### Page
-Use the ```@page``` to create a page in your documentation.
-
-```
-/**
- * @page My Personal Index Page
- * *Everything* but the page command is parsed to be the page content. The page content can be formatted using **Markdown**.
- * ### Markdown it is!
- */
-```
-
-## Doc.js is stupid
+## Why Doc.js is stupid
 Doc.js does not know a thing about the language it is parsing. Therefore, it cannot autogenerate documentation from your raw code. Because of this, comment blocks needs to be precise and contain more information than other language-aware documentation systems (e.g. Doxygen).
 
-## Todo
+## Todo list (for devs of this lib)
 * ```@deprecated``` and deprecated list
 * ```@author``` and author lists for all entities
 * ```@event``` (for classes)
@@ -167,3 +168,4 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
