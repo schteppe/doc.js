@@ -443,40 +443,37 @@ DOCJS.Generate = function(urls,opt){
      * @param int lineNumber
      */
     DOCJS.Block = function(src,rawSrc,lineNumber){
-	/**
-	 * @property int id
-	 */
-	this.id = ++blockIdCounter;
+	this.id = ++blockIdCounter; /// @property int id
 	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
 	var idx = rawSrc.indexOf(src);
-	this.rawDiff = (rawSrc.substr(0,idx).match(/\n/g)||[]).length;
+	this.rawDiff = (rawSrc.substr(0,idx).match(/\n/g)||[]).length; /// @property int rawDiff
 
 	var lines, parsedLines = [], that=this;
 	function splitLines(){
 	    if(!lines) lines = src.split("\n");
 	}
 
-	this.filename = "";
-	this.src = src;
-	this.rawSrc = rawSrc;
-	this.lineNumber = lineNumber;
+	this.filename = "";           /// @property string filename
+	this.src = src;               /// @property string src
+	this.rawSrc = rawSrc;         /// @property string rawSrc
+	this.lineNumber = lineNumber; /// @property int lineNumber
 
-	this.author = [];   // @author
-	this.brief = [];    // @brief
-	this.classs = [];   // @class
-	this.desc = [];     // @desc, @description
-	this.event = [];    // @event
-	this.example = [];  // @example
-	this.file = [];     // @file
-	this.func = [];     // @fn, @function
-	this.memberof = []; // @memberof
-	this.method = [];   // @method
-	this.page = [];     // @page
-	this.param = [];    // @param, @parameter
-	this.property = []; // @property
-	this.ret = [];      // @return, @returns
-	this.see = [];      // @see
-	this.todo = [];     // @todo
+	this.author = [];   /// @property Array author
+	this.brief = [];    /// @property Array brief
+	this.classs = [];   /// @property Array classs
+	this.desc = [];     /// @property Array desc
+	this.event = [];    /// @property Array event
+	this.example = [];  /// @property Array example
+	this.file = [];     /// @property Array file
+	this.func = [];     /// @property Array func
+	this.memberof = []; /// @property Array memberof
+	this.method = [];   /// @property Array method
+	this.page = [];     /// @property Array page
+	this.param = [];    /// @property Array param
+	this.property = []; /// @property Array property
+	this.ret = [];      /// @property Array ret
+	this.see = [];      /// @property Array see
+	this.todo = [];     /// @property Array todo
 
 	this.localToGlobalLineNumber = function(lineNumber){
 	    return parseInt(lineNumber) + that.lineNumber + that.rawDiff + 1;
@@ -566,11 +563,7 @@ DOCJS.Generate = function(urls,opt){
      * @brief Base class for entities.
      */
     DOCJS.Entity = function(block,entityName){
-	/**
-	 * @property DOCJS.Block block
-	 * @memberof DOCJS.Entity
-	 * @brief The block where where the Entity was defined
-	 */
+	/// @property DOCJS.Block block The block where where the Entity was defined
 	this.block = block;
 
 	if(!(entityName in entityCounter))
@@ -578,15 +571,9 @@ DOCJS.Generate = function(urls,opt){
 	else
 	    entityCounter[entityName]++;
 
-	/**
-	 * @property int id
-	 * @memberof DOCJS.Entity
-	 */
+	/// @property int id
 	this.id = entityCounter[entityName];
-	/**
-	 * @property int globalId
-	 * @memberof DOCJS.Entity
-	 */
+	/// @property int globalId
 	this.globalId = ++globalEntityCounter;
     }
 
@@ -805,15 +792,16 @@ DOCJS.Generate = function(urls,opt){
      */
     DOCJS.Documentation = function(){
 	var name2class, name2entity, that = this;
-	this.pages = [];
-	this.classes = [];
-	this.files = [];
-	this.functions = [];
-	this.library = false;
-	this.todos = [];
-	this.errors = [];
-	this.methods = [];
-	this.properties = [];
+	this.pages = [];      /// @property Array pages
+	this.classes = [];    /// @property Array classes
+	this.files = [];      /// @property Array files
+	this.functions = [];  /// @property Array functions
+	this.library = false; /// @property Array library
+	this.todos = [];      /// @property Array todos
+	this.errors = [];     /// @property Array errors
+	this.methods = [];    /// @property Array methods
+	this.properties = []; /// @property Array properties
+
 	this.update = function(){
 	    name2entity = {};
 
@@ -1317,11 +1305,12 @@ DOCJS.Generate = function(urls,opt){
     DOCJS.FunctionCommand = function(block,name,description){
 	if(typeof(name)!="string") throw new Error("Argument 2 must be string, "+typeof(name)+" given");
 	DOCJS.Command.call(this,block);
-	this.getName = function(){ return name; };
+	this.getName = function(){ return name; }; /// @method getName
 	this.setName = function(n){ name=n; };
-	this.getDescription = function(){ return description; };
+	this.getDescription = function(){ return description; }; /// @method getDescription
 	this.setDescription = function(n){ description=n; };
     }
+
     /**
      * @function DOCJS.FunctionCommand.parse
      * @param DOCJS.Block block
@@ -1712,7 +1701,7 @@ DOCJS.Generate = function(urls,opt){
      */
     DOCJS.VersionCommand = function(block,content){
 	DOCJS.Command.call(this,block);
-	this.getContent = function(){ return content; };
+	this.getContent = function(){ return content; }; /// @method getContent
     }
 
     /**
@@ -1747,6 +1736,9 @@ DOCJS.Generate = function(urls,opt){
 	var blockObjects = [];
 	// (.(?!\*\/))* is negative lookahead, anything not followed by */
 	var blocks = src.match(/\/\*\*\n(^(.(?!\*\/))*\n)+[\n\s\t]*\*\//gm) || [];
+	var oneLineBlocks = src.match(/\/\/\/(.*)/g);
+	for(var i=0; oneLineBlocks && i<oneLineBlocks.length; i++)
+	    blocks.push(oneLineBlocks[i]);
 	for(var i=0; i<blocks.length; i++){
 
 	    // find line number
@@ -1790,7 +1782,12 @@ DOCJS.Generate = function(urls,opt){
 	    block.version =  DOCJS.VersionCommand.parse(block,errors);
 
 	    blockObjects.push(block);
-	} 
+	}
+
+	// Sort by their position in the code
+	blockObjects.sort(function(b1,b2){
+	    return b1.lineNumber - b2.lineNumber;
+	});
 	return blockObjects;
     };
 
