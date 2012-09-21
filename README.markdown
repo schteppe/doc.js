@@ -59,11 +59,14 @@ Commands are parsed by Doc.js and they are later assembled into things in your d
 ```
 
 ## Comment blocks
-Currently only slash-star comment blocks are supported:
+Currently slash-star and single-line triple-slash comment blocks are supported:
 ```
 /**
- * Example
+ * Commands go here...
  */
+```
+```
+/// A single command goes here
 ```
 
 ### Command combinations
@@ -77,6 +80,7 @@ Command      Requires    Optional
 @property    @memberof   @author* @brief @description                                  @see* @todo*
 * = May be specified more than once in the same block.
 ```
+
 ### Examples
 #### Function
 ```
@@ -115,6 +119,10 @@ Use ```@method``` to describe a method belonging to a class.
  * @return float
  */
 ```
+Using single-line comment block (this will not be as informative as the above though):
+```
+/// @method myMethod
+```
 
 #### Property
 Use ```@property``` do document a property of your class.
@@ -124,6 +132,10 @@ Use ```@property``` do document a property of your class.
  * @memberof myClass
  * @brief This is a property in myClass.
  */
+```
+Using single-line comment block (this will not be as informative as the above though):
+```
+/// @property int myProperty
 ```
 
 #### Page
@@ -142,16 +154,9 @@ Doc.js does not know a thing about the language it is parsing. Therefore, it can
 
 ## Todo
 * ```@deprecated``` and deprecated list
-* ```@todo``` and todo list
 * ```@author``` and author lists for all entities
-* ```@extends``` (for classes)
 * ```@event``` (for classes)
-* Ability to specify ```@memberof``` for a longer piece of code using e.g. ```@memberOfStart``` and ```@memberOfEnd```
-* ```@example``` and ```@code``` + ```@endcode```
-* Parsing error list, including line numbers and such
 * Whenever a known entity is mentioned in ordinary description texts, add link
-* Library version, title, description?
-* Single line code blocks e.g. ```/// @param int myParam```
 
 ## License (the MIT license)
 
