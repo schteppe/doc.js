@@ -56,7 +56,6 @@ DOCJS.Generate = function(urls,opt){
     DOCJS.FileLoader = function(){
 	/**
 	 * @method load
-	 * @memberof DOCJS.FileLoader
 	 * @param string filename
 	 * @param function callback callback(error,data)
 	 */
@@ -106,7 +105,6 @@ DOCJS.Generate = function(urls,opt){
 	
 	/**
 	 * @method render
-	 * @memberof DOCJS.HTMLRenderer
 	 * @param DOCJS.Documentation doc
 	 * @return string The resulting HTML
 	 */
@@ -447,7 +445,6 @@ DOCJS.Generate = function(urls,opt){
     DOCJS.Block = function(src,rawSrc,lineNumber){
 	/**
 	 * @property int id
-	 * @memberof DOCJS.Block
 	 */
 	this.id = ++blockIdCounter;
 	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
@@ -795,6 +792,10 @@ DOCJS.Generate = function(urls,opt){
     DOCJS.PageEntity = function(block,pageCommand,content){
 	var that = this;
 	DOCJS.Entity.call(this,block);
+	/**
+	 * @method getName
+	 * @return string
+	 */
 	this.getName = function(){ return pageCommand.getName(); };
 	this.getContent = function(){ return content; };
     }
@@ -871,6 +872,8 @@ DOCJS.Generate = function(urls,opt){
 	for(var i=0; i<errors.length; i++)
 	    doc.errors.push(errors[i]);
 
+	var lastClass;
+
 	// Assemble Entities
 	for(var i=0; i<blocks.length; i++){
 	    var entity, block = blocks[i];
@@ -915,6 +918,7 @@ DOCJS.Generate = function(urls,opt){
 						       block.brief[0],
 						       block.desc[0],
 						       block.example);
+		    lastClass = entity;
 		    doc.classes.push(entity);
 		}
 
@@ -940,6 +944,11 @@ DOCJS.Generate = function(urls,opt){
 		doc.functions.push(entity);
 
 	    } else if(block.method.length){ // Method
+
+		// If we didn't get "memberof" field, assume the class is the last parsed one
+		if(block.memberof.length==0 && lastClass)
+		    block.memberof.push(new DOCJS.MemberofCommand(block,lastClass.getName()));
+		    
 		if(block.memberof.length==1){
 		    entity = new DOCJS.MethodEntity([block],
 						    block.method[0],
@@ -952,6 +961,11 @@ DOCJS.Generate = function(urls,opt){
 
 		
 	    } else if(block.property.length){ // Property
+
+		// If we didn't get "memberof" field, assume the class is the last parsed one
+		if(block.memberof.length==0 && lastClass)
+		    block.memberof.push(new DOCJS.MemberofCommand(block,lastClass.getName()));
+
 		if(block.memberof.length!=1)
 		    doc.errors.push(new DOCJS.ErrorReport(block.filename,
 						    block.lineNumber,
@@ -1040,7 +1054,6 @@ DOCJS.Generate = function(urls,opt){
 	DOCJS.Command.call(this,block);
 	/**
 	 * @method getContent
-	 * @memberof DOCJS.AuthorCommand
 	 * @return string
 	 */
 	this.getContent = function(){ return content; };
