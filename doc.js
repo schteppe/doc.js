@@ -52,6 +52,23 @@ var DOCJS = {};
  */
 DOCJS.Generate = function(urls,opt){
 
+    // Options
+    opt = opt || {};
+    var options = {
+	title:"Hello World!", // Should these be fetched from the blocks?
+	description:"My first Doc.js documentation",
+	showSourceUrl : true,
+        formatSourceUrl : function(filename,lineNumber){ return filename; },
+	renderer : null,
+	fileLoader : null,
+	showErrors : true,
+	showTodos : true
+    };
+    // Extend options
+    for(var key in opt)
+	if(key in options)
+	    options[key] = opt[key];
+
     /**
      * @class DOCJS.FileLoader
      */
@@ -73,17 +90,24 @@ DOCJS.Generate = function(urls,opt){
     DOCJS.AjaxFileLoader = function(){
 	DOCJS.FileLoader.call(this);
 	this.load = function(url,callback){
-	    $.ajax({
-		url:url,
-		dataType:'text',
-		async:true,
-		success:function(data){
-		    callback(null,data);
-		},
-		error:function(){
-		    callback("Could not load file.",null);
+	    var xmlhttp;
+	    if (window.XMLHttpRequest){
+		// code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp = new XMLHttpRequest();
+	    } else {
+		// code for IE6, IE5
+		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+	    }
+	    xmlhttp.onreadystatechange = function(){
+		if (xmlhttp.readyState==4){
+		    if(xmlhttp.status==200)
+			callback(null,xmlhttp.responseText);
+		    else 
+			callback(new DOCJS.ErrorReport(url,0,"Could not load file "+url));
 		}
-	    });
+	    };
+	    xmlhttp.open("GET",url,true);
+	    xmlhttp.send();
 	};
     };
 
@@ -248,9 +272,9 @@ DOCJS.Generate = function(urls,opt){
 			}
 			
 			// Source
-			if(opt.showSourceUrl){
-			    var url = opt.formatSourceUrl(f.block[0].filename,
-							  f.block[0].lineNumber);
+			if(options.showSourceUrl){
+			    var url = options.formatSourceUrl(f.block[0].filename,
+							      f.block[0].lineNumber);
 			    html += "<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>";
 			}
 			
@@ -330,9 +354,9 @@ DOCJS.Generate = function(urls,opt){
 		    }
 		    
 		    // Source
-		    if(opt.showSourceUrl){
-			var url = opt.formatSourceUrl(c.block[0].filename,
-						      c.block[0].lineNumber);
+		    if(options.showSourceUrl){
+			var url = options.formatSourceUrl(c.block[0].filename,
+							  c.block[0].lineNumber);
 			html += ("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>");
 		    }
 
@@ -401,22 +425,10 @@ DOCJS.Generate = function(urls,opt){
 	};
     };
     
-    // Options
-    opt = opt || {};
-    var options = {
-	title:"Hello World!", // Should these be fetched from the blocks?
-	description:"My first Doc.js documentation",
-	showSourceUrl : true,
-        formatSourceUrl : function(filename,lineNumber){ return filename; },
-	renderer : new DOCJS.HTMLRenderer(),
-	fileLoader : new DOCJS.AjaxFileLoader(),
-	showErrors : true,
-	showTodos : true
-    };
-    $.extend(options,opt);
-    
     loadBlocks(urls,function(blocks,errors){
 	var doc = makeEntities(blocks,errors);
+	if(!options.renderer)
+	    options.renderer = new DOCJS.HTMLRenderer();
 	var html = (options.renderer.render(doc));
 	document.body.innerHTML = html;
     });
@@ -1802,25 +1814,24 @@ DOCJS.Generate = function(urls,opt){
 	// Get the files
 	var numLoaded = 0;
 	var errors = [];
+	var blocks = [];
+	if(!options.fileLoader)
+	    options.fileLoader = new DOCJS.AjaxFileLoader();
 	for(var i=0; i<urls.length; i++){
-	    var file = urls[i];
-	    $.ajax({
-		url:urls[i],
-		dataType:'text',
-		async:true,
-		success:function(data){
-		    var blocks = parseBlocks(data,file,errors);
+	    (function(url){
+		options.fileLoader.load(url,function(err,content){
 		    numLoaded++;
-		    if(numLoaded==urls.length)
-			callback(blocks,errors);
-		},
-		error:function(){
-		    // todo
-		    numLoaded++;
-		    if(numLoaded==urls.length)
-			callback(blocks,errors);
-		}
-	    });
+		    if(!err){
+			blocks = parseBlocks(content,url,errors);
+			if(numLoaded==urls.length)
+			    callback(blocks,errors);
+		    } else {
+			errors.push(err);
+			if(numLoaded==urls.length)
+			    callback(blocks,errors);
+		    }
+		});
+	    })(urls[i]);
 	}
     }
 };
