@@ -37,7 +37,9 @@ var DOCJS = {};
  *       showSourceUrl :   true,
  *       formatSourceUrl : function(file, lineNum){ return file; },
  *       renderer :        new DOCJS.HTMLRenderer(),
- *       fileLoader :      new DOCJS.AjaxFileLoader()
+ *       fileLoader :      new DOCJS.AjaxFileLoader(),
+ *       showErrors :      true,
+ *       showTodos :       true
  *     }
  * 
  * * ```title``` (string) is the title of the documentation.
@@ -345,15 +347,17 @@ DOCJS.Generate = function(urls,opt){
 	    // Todos
 	    function makeTodos(){
 		var html = "";
-		for(var i=0; i<doc.todos.length; i++){
-		    if(i==0)
-			html += "<section id=\"todos\"><h1>Todos ("+doc.todos.length+")</h1>";
-		    var todo = doc.todos[i];
-		    html += ("<div id=\"todos-"+todo.id+"\">" +
-			     "<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>" +
-			     "<p>"+todo.getContent()+"</p></div>");
-		    if(i==doc.todos.length-1)
-			html += "</section>";
+		if(options.showTodos){
+		    for(var i=0; i<doc.todos.length; i++){
+			if(i==0)
+			    html += "<section id=\"todos\"><h1>Todos ("+doc.todos.length+")</h1>";
+			var todo = doc.todos[i];
+			html += ("<div id=\"todos-"+todo.id+"\">" +
+				 "<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>" +
+				 "<p>"+todo.getContent()+"</p></div>");
+			if(i==doc.todos.length-1)
+			    html += "</section>";
+		    }
 		}
 		return html;
 	    }
@@ -361,15 +365,17 @@ DOCJS.Generate = function(urls,opt){
 	    // Errors
 	    function makeErrors(){
 		var html = "";
-		for(var i=0; i<doc.errors.length; i++){
-		    if(i==0)
-			html += "<section id=\"errors\"><h1>Errors ("+doc.errors.length+")</h1>";
-		    var error = doc.errors[i];
-		    html += ("<div id=\"errors-"+error.id+"\">" +
-			     "<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>" + 
-			     "<p>"+error.message+"</p></div>");
-		    if(i==doc.errors.length-1)
-			html += "</section>";
+		if(options.showErrors){
+		    for(var i=0; i<doc.errors.length; i++){
+			if(i==0)
+			    html += "<section id=\"errors\"><h1>Errors ("+doc.errors.length+")</h1>";
+			var error = doc.errors[i];
+			html += ("<div id=\"errors-"+error.id+"\">" +
+				 "<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>" + 
+				 "<p>"+error.message+"</p></div>");
+			if(i==doc.errors.length-1)
+			    html += "</section>";
+		    }
 		}
 		return html;
 	    }
@@ -404,14 +410,15 @@ DOCJS.Generate = function(urls,opt){
         formatSourceUrl : function(filename,lineNumber){ return filename; },
 	renderer : new DOCJS.HTMLRenderer(),
 	fileLoader : new DOCJS.AjaxFileLoader(),
+	showErrors : true,
+	showTodos : true
     };
     $.extend(options,opt);
     
     loadBlocks(urls,function(blocks,errors){
 	var doc = makeEntities(blocks,errors);
 	var html = (options.renderer.render(doc));
-	updateHTML(doc);
-	//$("body").html(html);
+	document.body.innerHTML = html;
     });
 
     var idCount = 0;
@@ -1790,283 +1797,6 @@ DOCJS.Generate = function(urls,opt){
 	});
 	return blockObjects;
     };
-
-    function updateHTML(doc){
-
-	setupLayout();
-
-	// Library info
-	if(doc.library){
-	    $("#libtitle").html(doc.library.getName());
-	    $("#libversion").html(doc.library.getVersion());
-	    $("#libdesc").html(doc.library.getBrief());
-	} else {
-	    $("#libtitle").html("Untitled");
-	    $("#libversion").html("0.0.0");
-	    $("#libdesc").html("An untitled library doc");
-	}
-	
-	// Pages
-	if(doc.pages.length > 0){
-	    var links = [], contents = [];
-	    for(var i=0; i<doc.pages.length; i++){
-		var page = doc.pages[i];
-		var $sec = $("<section id=\"pages-"+toNice(page.getName())+"\"></section>")
-		    .append($("<h2>"+page.getName()+"</h2>"))
-		    .append($(markDown2HTML(page.getContent())));
-		
-		contents.push($sec);
-		links.push($("<a href=\"#pages-"+toNice(page.getName())+"\">"+page.getName()+"</a>"));
-	    }
-	    createSection("pages","Pages",contents);
-	    createMenuList("pages","Pages",links);
-	}
-
-	// Functions
-	if(doc.functions.length > 0){
-	    var links = [], contents = [];
-	    for(var i=0; i<doc.functions.length; i++){
-		var f = doc.functions[i];
-		var $sec = $("<section id=\"functions-"+toNice(f.getName())+"\"></section>")
-		    .append($("<h2>"+f.getName()+"</h2>"));
-
-		// Brief
-		if(f.getBrief()){
-		    $sec.append( $("<p class=\"brief\">"+f.getBrief()+"</p>"));
-		}
-
-		// Description
-		$sec.append($("<h3>Description</h3>"));
-		var params = [];
-		for(var k=0; k<f.numParams(); k++){
-		    params.push("<span class=\"datatype\">"+nameToLink(f.getParamDataType(k))+"</span> <span>" + f.getParamName(k) + "</span>");
-		}
-		$sec.append($("<span class=\"datatype\">"+
-			      (f.getReturnDataType() ? f.getReturnDataType() : "")+
-			      "</span> <span>" + 
-			      f.getName() + 
-			      " ( " + params.join(" , ") + " ) </span>"));
-		
-
-		// Description
-		if(f.getDescription()){
-		    $sec.append( $("<p class=\"description\">"+f.getDescription()+"</p>"));
-		}
-
-		// Parameters
-		if(f.numParams()>0){
-		    $sec.append($("<h3>Parameters</h3>"));
-		    var $params = $("<table></table>").addClass("member_overview");
-		    for(var k=0; k<f.numParams(); k++){
-			$params.append("<tr><td class=\"datatype\">"+nameToLink(f.getParamDataType(k) ? f.getParamDataType(k) : "")+"</td><td class=\"paramName\">" + f.getParamName(k) + "</td><td class=\"brief\">"+(f.getParamDescription(k) ? f.getParamDescription(k) : "")+"</td></tr>");
-		    }
-		    $sec.append($params);
-		}
-
-		// Return value
-		if(f.getReturnDescription()){
-		    $sec.append($("<h3>Return value</h3>"));
-		    $sec.append("<p>"+f.getReturnDescription(k)+"</p>");
-		}
-
-		// Examples
-		if(f.numExamples()){
-		    for(var j=0; j<f.numExamples(); j++){
-			// Example
-			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(f.getExampleText(j))+"</div>"));
-		    }
-		}
-
-		// Source
-		if(opt.showSourceUrl){
-		    var url = opt.formatSourceUrl(f.block[0].filename,
-						  f.block[0].lineNumber);
-		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
-		}
-
-		contents.push($sec);
-		links.push($("<a href=\"#functions-"+toNice(f.getName())+"\">"+f.getName()+"</a>"));
-	    }
-	    createSection("functions","Functions",contents);
-	    createMenuList("functions","Functions",links);
-	}
-	
-
-	// Classes
-	if(doc.classes.length > 0){
-	    var links = [], contents = [];
-	    for(var i=0; i<doc.classes.length; i++){
-		var c = doc.classes[i];
-		
-		var $sec = $("<section id=\"classes-"+toNice(c.getName())+"\"></section>");
-		$sec.append($("<h2>"+c.getName()+"</h2>"));
-
-		// Brief
-		if(c.getBrief())
-		    $sec.append($("<p class=\"brief\">"+c.getBrief()+"</p>"));
-
-		// Inheritance list
-		var extendsList = doc.getInheritanceList(c);
-		extendsList.shift();
-		if(extendsList.length >= 1){
-		    for(var j=0; j<extendsList.length; j++)
-			extendsList[j] = nameToLink(extendsList[j]);
-		    $sec.append($("<p>Extends "+extendsList.join(" → ")+"</p>"));
-		}
-
-		// Constructor
-		var args = [];
-		for(var j=0; j<c.numParams(); j++)
-		    args.push("<span class=\"datatype\">"+nameToLink(c.getParamDataType(j))+"</span> " + c.getParamName(j));
-		$sec.append($("<h3>Constructor</h3>"));
-		$sec.append($("<p>"+c.getName() + " ( " + args.join(" , ")+" )</p>"));
-
-		// Method overview table
-		var numMethods = c.numMethods();
-		if(numMethods>0){
-		    $sec.append($("<h3>Methods</h3>"));
-		    var $methods = $("<table></table>").addClass("member_overview");
-		    for(var k=0; k<numMethods; k++){
-			var method = c.getMethod(k);
-			var params = [];
-			for(var l=0; l<method.numParams(); l++){
-			    params.push("<span class=\"datatype\">"+nameToLink(method.getParamDataType(l))+"</span>" + " " + method.getParamName(l));
-			}
-			$methods
-			    .append($("<tr><td class=\"datatype\">"+(method.getReturnDataType() ? method.getReturnDataType() : "")+"</td><td>"
-				      + method.getName() + " ( " +params.join(" , ")+ " )</td></tr>"))
-			    .append($("<tr><td></td><td class=\"brief\">"+(method.getBrief() ? method.getBrief() : "")+"</td></tr>"));
-		    }
-		    $sec.append($methods);
-		}
-		
-		// Properties
-		var numProperties = c.numProperties();
-		if(numProperties>0){
-		    $sec.append($("<h3>Properties</h3>"));
-		    var $properties = $("<table></table>").addClass("member_overview");
-		    for(var k=0; k<numProperties; k++){
-			$properties.append("<tr><td class=\"datatype\">"+nameToLink(c.getPropertyDataType(k))+"</td><td class=\"propertyName\">" + c.getPropertyName(k) + "</td><td class=\"brief\">"+(c.getPropertyBrief(k) ? c.getPropertyBrief(k) : "")+"</td></tr>");
-		    }
-		    $sec.append($properties);
-		}
-
-		// Examples
-		if(c.numExamples()){
-		    for(var j=0; j<c.numExamples(); j++){
-			// Example
-			$sec.append($("<h3>Example "+(j+1)+"</h3><div>"+markDown2HTML(c.getExampleText(j))+"</div>"));
-		    }
-		}
-
-		// Source
-		if(opt.showSourceUrl){
-		    var url = opt.formatSourceUrl(c.block[0].filename,
-						  c.block[0].lineNumber);
-		    $sec.append($("<h3>Source</h3><p><a href=\""+url+"\">"+url+"</a></p>"));
-		}
-
-		contents.push($sec);
-		links.push($("<a href=\"#classes-"+toNice(c.getName())+"\">"+c.getName()+"</a>"));
-	    }
-	    createSection("classes","Classes",contents);
-	    createMenuList("classes","Classes",links);
-	}
-
-	// Todos
-	if(doc.todos.length > 0){
-	    var links = [], contents = [];
-	    for(var i=0; i<doc.todos.length; i++){
-		var todo = doc.todos[i];
-		var $sec = $("<div id=\"todos-"+todo.id+"\"></div>")
-		    .append($("<h2>"+todo.block[0].filename+" line "+todo.getLine()+"</h2>"))
-		    .append($("<p>"+todo.getContent()+"</p>"));
-		contents.push($sec);
-	    }
-	    createSection("todos","Todos ("+doc.todos.length+")",contents);
-	    createMenuList("todos","Todos ("+doc.todos.length+")",links);
-	}
-
-	// Errors
-	if(doc.errors.length > 0){
-	    var links = [], contents = [];
-	    for(var i=0; i<doc.errors.length; i++){
-		var error = doc.errors[i];
-		var $sec = $("<div id=\"errors-"+error.id+"\"></div>")
-		    .append($("<h2>Error "+error.id+"</h2><p>"+error.file+" on line "+error.lineNumber+"</p>"))
-		    .append($("<p>"+error.message+"</p>"));
-		contents.push($sec);
-	    }
-	    createSection("errors","Errors ("+doc.errors.length+")",contents);
-	    createMenuList("errors","Errors ("+doc.errors.length+")",links);
-	}
-
-	
-	function setupLayout(){
-	    // Setup basic page layout
-	    $("body")
-		.html("")
-		.append("<article>\
-<nav><div id=\"logo\"></div></nav>\
-<div id=\"content\"></div>\
-</article>\
-<footer>\
-<p>Documentation generated by <a href=\"http://github.com/schteppe/doc.js\">doc.js</a>.</p>\
-</footer>");
-
-	    // Set repos header
-	    $("#logo")
-		.append("<h1><span id=\"libtitle\">"+options.title+"</span><sup id=\"libversion\"></sup></h1>")
-		.append("<p id=\"libdesc\">"+options.description+"</p>");
-	}
-
-	// Convert a name to a link, or just return the input name
-	function nameToLink(name){
-	    var r = name;
-	    var entity = doc.nameToEntity(name);
-	    if(entity){
-		if(entity instanceof DOCJS.ClassEntity)
-		    r = "<a href=\"#classes-"+toNice(name)+"\">"+name+"</a>";
-	    }
-	    return r;
-	}
-
-	function markDown2HTML(m){
-	    if(typeof(Markdown)!="undefined"){
-		var converter = Markdown.getSanitizingConverter();
-		return converter.makeHtml(m);
-	    } else
-	    return "<div>"+m+"</div>"; // todo
-	}
-
-	// Create a section e.g. Classes, Functions, etc
-	function createSection(id,title,$content){
-	    var $title =  $("<h1>"+title+"</h1>");
-	    var $section = $("<section id=\""+id+"\"></section>");
-	    $section
-		.append($title);
-	    if($content.length)
-		for(var i=0; i<$content.length; i++)
-		    $section.append($content[i]);
-	    else
-		$section.append($content);
-	    $("#content").append($section);
-	}
-	
-	// Create corresp. menu list
-	function createMenuList(id,title,items){
-	    var $ul = $("<ul></ul>");
-	    $("nav")
-		.append("<h2><a href=\"#"+id+"\">"+title+"</a></h2>")
-		.append($ul);
-	    for(var i=0; i<items.length; i++){
-		$li = $("<li></li>");
-		$li.append(items[i]);
-		$ul.append($li);
-	    }
-	}
-    }
-   
 
     function loadBlocks(urls,callback){
 	// Get the files
