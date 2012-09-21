@@ -29,7 +29,7 @@ var DOCJS = {};
  * 
  * ...and then you're done!
  * 
- * The options looks like this by default:
+ * The options may look like this:
  * 
  *     {
  *       title :           "Hello World!",
@@ -39,6 +39,12 @@ var DOCJS = {};
  *       renderer :        new DOCJS.HTMLRenderer(),
  *       fileLoader :      new DOCJS.AjaxFileLoader()
  *     }
+ * 
+ * * ```title``` (string) is the title of the documentation.
+ * * ```description``` (string) is a short description of the documentation.
+ * * ```showSourceUrl``` (bool) can turn on/off visibility of the source links
+ * * ```renderer```  is the DOCJS.Renderer to use.
+ * * ```fileLoader``` is a DOCJS.FileLoader
  * 
  * @endexample
  */
@@ -80,13 +86,30 @@ DOCJS.Generate = function(urls,opt){
 	};
     };
 
+    /**
+     * @class DOCJS.Renderer
+     * @brief Base class for renderers
+     */
     DOCJS.Renderer = function(){
 	this.render = function(doc){
 	    throw new Error("A DOCJS.Renderer must implement a method .render(doc)!");
 	};
     };
+
+    /**
+     * @class DOCJS.HTMLRenderer
+     * @brief Can render documentation to HTML
+     * @extends DOCJS.Renderer
+     */
     DOCJS.HTMLRenderer = function(){
 	DOCJS.Renderer.call(this);
+	
+	/**
+	 * @method render
+	 * @memberof DOCJS.HTMLRenderer
+	 * @param DOCJS.Documentation doc
+	 * @return string The resulting HTML
+	 */
 	this.render = function(doc){
 	    return makeBody();
 
@@ -416,11 +439,16 @@ DOCJS.Generate = function(urls,opt){
 
     /**
      * @class DOCJS.Block
+     * @brief Container for a documentation comment block.
      * @param string src
      * @param string rawSrc
      * @param int lineNumber
      */
     DOCJS.Block = function(src,rawSrc,lineNumber){
+	/**
+	 * @property int id
+	 * @memberof DOCJS.Block
+	 */
 	this.id = ++blockIdCounter;
 	// Diff between src and rawSrc in lines, needed to convert between local and global line numbers
 	var idx = rawSrc.indexOf(src);
@@ -514,6 +542,13 @@ DOCJS.Generate = function(urls,opt){
 	}
     }
 
+    /**
+     * @class DOCJS.ErrorReport
+     * @brief Container for parsing errors.
+     * @param string filename
+     * @param int lineNumber
+     * @param string message
+     */
     var errorReportIdCounter = 0;
     DOCJS.ErrorReport = function(filename,lineNumber,message){
 	this.lineNumber = lineNumber;
@@ -566,7 +601,9 @@ DOCJS.Generate = function(urls,opt){
      */
     DOCJS.FileEntity = function(block,fileCommand){
 	DOCJS.Entity.call(this,block);
-	this.getName = function(){ return fileCommand.getName(); };
+	this.getName = function(){
+	    return fileCommand.getName();
+	};
     }
 
     /**
@@ -602,7 +639,6 @@ DOCJS.Generate = function(urls,opt){
 	 */
 	this.getBrief = function(){ return briefCommand ? briefCommand.getContent() : false; };
 	this.getDescription = function(){ return descriptionCommand ? descriptionCommand.getContent() : false; };
-
 	this.getReturnDataType = function(){ return returnCommand ? returnCommand.getDataType() : false; };
 	this.getReturnDescription = function(){ return returnCommand ? returnCommand.getDescription() : false; };
 
